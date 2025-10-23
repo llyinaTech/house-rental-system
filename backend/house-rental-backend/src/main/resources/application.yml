@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: house-rental-backend
+server:
+  port: 8081

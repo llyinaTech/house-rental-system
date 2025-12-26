@@ -1,0 +1,18 @@
+2025-12-25 22:18:25.597 [main] INFO  c.l.h.HouseRentalBackendApplication - Starting HouseRentalBackendApplication using Java 17.0.12 with PID 24816 (D:\workspace\MyFullProject\HouseRentel\house-rental-system\backend\house-rental-backend\target\classes started by llyina in D:\workspace\MyFullProject\HouseRentel\house-rental-system\backend\house-rental-backend)
+2025-12-25 22:18:25.598 [main] DEBUG c.l.h.HouseRentalBackendApplication - Running with Spring Boot v3.5.6, Spring v6.2.11
+2025-12-25 22:18:25.598 [main] INFO  c.l.h.HouseRentalBackendApplication - No active profile set, falling back to 1 default profile: "default"
+2025-12-25 22:18:26.143 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2025-12-25 22:18:26.151 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-25 22:18:26.152 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-12-25 22:18:26.181 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-25 22:18:26.181 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 555 ms
+2025-12-25 22:18:26.339 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-12-25 22:18:26.431 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@198536f6
+2025-12-25 22:18:26.431 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-12-25 22:18:26.886 [main] WARN  c.b.m.c.injector.DefaultSqlInjector - class com.llyinatech.houserental.entity.UserRole ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2025-12-25 22:18:26.914 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path '/'
+2025-12-25 22:18:26.919 [main] INFO  c.l.h.HouseRentalBackendApplication - Started HouseRentalBackendApplication in 1.64 seconds (process running for 1.978)
+2025-12-25 22:19:40.689 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-25 22:19:40.766 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-12-25 22:19:40.768 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-12-25 22:19:40.773 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

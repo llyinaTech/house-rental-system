@@ -16,8 +16,9 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
 <template>
   <el-container class="layout-container">
     <el-aside :width="asideWidth" class="aside" :class="{ 'is-collapsed': isCollapse }">
-      <div class="logo-container">
-        <h2>房屋租赁系统</h2>
+      <div class="logo-container" @click="toggleAside" title="点击展开/收起">
+        <h2 v-show="!isCollapse">房屋租赁系统</h2>
+        <h2 v-show="isCollapse">房</h2>
       </div>
       <el-menu
         router
@@ -33,49 +34,66 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
           </span>
           <span class="menu-text" title="仪表盘">仪表盘</span>
         </el-menu-item>
-        <el-menu-item index="/listings">
-          <span class="menu-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8-1.5 1.3L12 6.2 4.5 12.3 3 11l9-8zm-7 9.5V21h6v-5h2v5h6v-8.5l-7-5.6-7 5.6z"/></svg>
-          </span>
-          <span class="menu-text" title="房源管理">房源管理</span>
-        </el-menu-item>
-        <el-menu-item index="/tenants">
-          <span class="menu-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm-9 9a9 9 0 1 1 18 0H3z"/></svg>
-          </span>
-          <span class="menu-text" title="租客管理">租客管理</span>
-        </el-menu-item>
-        <el-menu-item index="/contracts">
-          <span class="menu-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 2v5h5"/><path d="M8 10h8M8 14h8M8 18h6"/></svg>
-          </span>
-          <span class="menu-text" title="合同管理">合同管理</span>
-        </el-menu-item>
-        <el-menu-item index="/payments">
-          <span class="menu-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v4H3V5zm0 6h18v8H3v-8zm2 2v4h6v-4H5z"/></svg>
-          </span>
-          <span class="menu-text" title="租金管理">租金管理</span>
-        </el-menu-item>
-        <el-menu-item index="/repairs">
-          <span class="menu-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7l-4 4-2-2 4-4a3 3 0 1 0-4.24-4.24l-4 4L8 3 4 7l4 4-7 7 3 3 7-7 4 4 4-4-2-2 4-4z"/></svg>
-          </span>
-          <span class="menu-text" title="报修管理">报修管理</span>
-        </el-menu-item>
-        <el-menu-item index="/reports">
-          <span class="menu-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h2v18H3V3zm4 10h2v8H7v-8zm4-4h2v12h-2V9zm4-6h2v18h-2V3zm4 8h2v10h-2V11z"/></svg>
-          </span>
-          <span class="menu-text" title="数据统计">数据统计</span>
-        </el-menu-item>
+
+        <el-sub-menu index="system">
+          <template #title>
+            <span class="menu-icon" aria-hidden="true">
+               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm-9 9a9 9 0 1 1 18 0H3z"/></svg>
+            </span>
+            <span class="menu-text">系统管理</span>
+          </template>
+          <el-menu-item index="/system/users">用户管理</el-menu-item>
+          <el-menu-item index="/system/roles">角色管理</el-menu-item>
+          <el-menu-item index="/system/logs">日志管理</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="house">
+          <template #title>
+            <span class="menu-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8-1.5 1.3L12 6.2 4.5 12.3 3 11l9-8zm-7 9.5V21h6v-5h2v5h6v-8.5l-7-5.6-7 5.6z"/></svg>
+            </span>
+            <span class="menu-text">房源管理</span>
+          </template>
+          <el-menu-item index="/house/regions">区域管理</el-menu-item>
+          <el-menu-item index="/house/list">房源信息</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="contract">
+          <template #title>
+            <span class="menu-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 2v5h5"/><path d="M8 10h8M8 14h8M8 18h6"/></svg>
+            </span>
+            <span class="menu-text">合同管理</span>
+          </template>
+          <el-menu-item index="/contract/list">合同列表</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="finance">
+          <template #title>
+            <span class="menu-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v4H3V5zm0 6h18v8H3v-8zm2 2v4h6v-4H5z"/></svg>
+            </span>
+            <span class="menu-text">财务管理</span>
+          </template>
+          <el-menu-item index="/finance/bills">租金账单</el-menu-item>
+          <el-menu-item index="/finance/stats">数据统计</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="service">
+          <template #title>
+            <span class="menu-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7l-4 4-2-2 4-4a3 3 0 1 0-4.24-4.24l-4 4L8 3 4 7l4 4-7 7 3 3 7-7 4 4 4-4-2-2 4-4z"/></svg>
+            </span>
+            <span class="menu-text">服务管理</span>
+          </template>
+          <el-menu-item index="/service/repairs">报修工单</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
 
     <el-container>
       <el-header class="header">
         <div class="header-left">
-          <el-button text @click="toggleAside" class="toggle-btn">{{ isCollapse ? '展开' : '收起' }}</el-button>
           <el-breadcrumb separator="/" class="breadcrumb">
             <el-breadcrumb-item>首页</el-breadcrumb-item>
             <el-breadcrumb-item>{{ route.name }}</el-breadcrumb-item>
@@ -106,9 +124,10 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
 
 <style scoped>
 .layout-container { height: 100%; }
-.aside { background-color: #304156; color: #fff; }
-.logo-container { height: 60px; display: flex; align-items: center; justify-content: center; color: #fff; }
-.is-collapsed .logo-container h2 { display: none; }
+.aside { background-color: #304156; color: #fff; transition: width 0.3s; }
+.logo-container { height: 60px; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; user-select: none; }
+.logo-container:hover { background-color: #263445; }
+.is-collapsed .logo-container h2 { display: block; }
 .header { background-color: #fff; border-bottom: 1px solid #e6e6e6; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
 .user-dropdown { cursor: pointer; display: flex; align-items: center; }
 .el-menu-vertical { border-right: none; }

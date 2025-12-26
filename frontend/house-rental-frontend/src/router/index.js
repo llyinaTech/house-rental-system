@@ -11,12 +11,25 @@ const routes = [
     redirect: '/dashboard',
     children: [
       { path: 'dashboard', name: 'Dashboard', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
-      { path: 'listings', name: 'Listings', component: () => import('@/views/Listings.vue'), meta: { requiresAuth: true } },
-      { path: 'tenants', name: 'Tenants', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
-      { path: 'contracts', name: 'Contracts', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
-      { path: 'payments', name: 'Payments', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
-      { path: 'repairs', name: 'Repairs', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
-      { path: 'reports', name: 'Reports', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      
+      // System Management
+      { path: 'system/users', name: 'UserManagement', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      { path: 'system/roles', name: 'RoleManagement', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      { path: 'system/logs', name: 'LogManagement', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      
+      // House Management
+      { path: 'house/regions', name: 'RegionManagement', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      { path: 'house/list', name: 'HouseInfo', component: () => import('@/views/Listings.vue'), meta: { requiresAuth: true } },
+      
+      // Contract Management
+      { path: 'contract/list', name: 'ContractList', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      
+      // Finance Management
+      { path: 'finance/bills', name: 'RentBills', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      { path: 'finance/stats', name: 'Statistics', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
+      
+      // Service Management
+      { path: 'service/repairs', name: 'RepairOrders', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
     ],
   },
 ]

@@ -1,208 +1,134 @@
 <template>
   <div class="dashboard-container">
     <el-row :gutter="20">
-      <el-col :span="6" v-for="card in statCards" :key="card.title">
-        <el-card class="stat-card">
-          <div class="card-title">{{ card.title }}</div>
-          <div class="card-value">{{ card.value }}</div>
-          <div class="card-footer">{{ card.footer }}</div>
+      <el-col :span="16">
+        <el-card shadow="hover" class="welcome-card">
+          <div class="welcome-header">
+            <div class="welcome-text">
+              <h2>欢迎回来，{{ auth.user?.username || '管理员' }}！</h2>
+              <p>今天是 {{ currentDate }}</p>
+            </div>
+            <img src="@/assets/welcome.svg" alt="welcome" class="welcome-img" v-if="false" />
+          </div>
         </el-card>
-      </el-col>
-    </el-row>
-    
-    <el-row :gutter="20" class="chart-row">
-      <el-col :span="12">
-        <el-card class="chart-card">
+
+        <el-card shadow="hover" class="todo-card">
           <template #header>
             <div class="card-header">
-              <span>房源出租率</span>
+              <span><el-icon><List /></el-icon> 待办事项</span>
             </div>
           </template>
-          <div ref="occupancyChartRef" class="chart-container"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>租金收入趋势</span>
-            </div>
-          </template>
-          <div ref="incomeChartRef" class="chart-container"></div>
-        </el-card>
-      </el-col>
-    </el-row>
-    
-    <el-row :gutter="20" class="table-row">
-      <el-col :span="24">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>待处理事项</span>
-            </div>
-          </template>
-          <el-table :data="todoItems" style="width: 100%">
-            <el-table-column prop="type" label="类型" width="120">
+          <el-table :data="todoItems" style="width: 100%" :show-header="false">
+            <el-table-column prop="type" width="100">
               <template #default="scope">
-                <el-tag :type="getTodoTagType(scope.row.type)">{{ scope.row.type }}</el-tag>
+                <el-tag :type="getTodoTagType(scope.row.type)" effect="dark">{{ scope.row.type }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="title" label="标题"></el-table-column>
-            <el-table-column prop="date" label="日期" width="180"></el-table-column>
-            <el-table-column prop="status" label="状态" width="120">
-              <template #default="scope">
-                <el-tag type="warning" size="small">{{ scope.row.status }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="120">
+            <el-table-column prop="title" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="date" width="120" align="right"></el-table-column>
+            <el-table-column width="80" align="center">
               <template #default>
-                <el-button type="primary" link size="small">处理</el-button>
+                <el-button type="primary" link>处理</el-button>
               </template>
             </el-table-column>
           </el-table>
         </el-card>
       </el-col>
+      
+      <el-col :span="8">
+        <el-card shadow="hover" class="notice-card">
+          <template #header>
+            <div class="card-header">
+              <span><el-icon><Bell /></el-icon> 系统公告</span>
+              <el-button type="primary" link @click="$router.push('/system/notices')">更多</el-button>
+            </div>
+          </template>
+          <div class="notice-list">
+            <el-timeline v-if="noticeList.length">
+              <el-timeline-item
+                v-for="notice in noticeList"
+                :key="notice.id"
+                :timestamp="notice.createTime"
+                placement="top"
+                type="primary"
+                :hollow="true"
+              >
+                <div class="notice-item-content" @click="showNotice(notice)">
+                  <span class="notice-title">{{ notice.title }}</span>
+                </div>
+              </el-timeline-item>
+            </el-timeline>
+            <el-empty v-else description="暂无公告" :image-size="60"></el-empty>
+          </div>
+        </el-card>
+      </el-col>
     </el-row>
+
+    <!-- 公告详情弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="currentNotice.title"
+      width="500px"
+    >
+      <div class="notice-content" v-html="currentNotice.content"></div>
+      <template #footer>
+        <span class="dialog-footer">
+          <span class="notice-meta">发布于: {{ currentNotice.createTime }}</span>
+          <el-button @click="dialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { reactive, onMounted, ref, onBeforeUnmount } from 'vue'
-import * as echarts from 'echarts'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { List, Bell } from '@element-plus/icons-vue'
+import api from '@/api/request'
+import dayjs from 'dayjs'
 
-const statCards = reactive([
-  { title: '房源总数', value: '128', footer: '套' },
-  { title: '在租房源', value: '98', footer: '套' },
-  { title: '租客总数', value: '112', footer: '人' },
-  { title: '本月收入', value: '￥86,500', footer: '元' }
-])
+const auth = useAuthStore()
+const currentDate = dayjs().format('YYYY年MM月DD日 dddd')
 
+const noticeList = ref([])
+const dialogVisible = ref(false)
+const currentNotice = reactive({})
+
+// 待办事项模拟数据
 const todoItems = reactive([
-  { type: '报修', title: '水管漏水维修申请', date: '2023-10-15', status: '待处理' },
-  { type: '合同', title: '租约到期提醒', date: '2023-10-18', status: '待处理' },
-  { type: '租金', title: '租金逾期提醒', date: '2023-10-20', status: '待处理' },
-  { type: '报修', title: '门锁更换申请', date: '2023-10-22', status: '待处理' }
+  { type: '报修', title: '201室水管漏水维修申请', date: '2023-10-15' },
+  { type: '合同', title: '102室租约即将到期', date: '2023-10-18' },
+  { type: '租金', title: '305室租金逾期提醒', date: '2023-10-20' },
+  { type: '审批', title: '新用户注册待审核', date: '2023-10-22' }
 ])
 
 const getTodoTagType = (type) => {
-  const map = {
-    '报修': 'danger',
-    '合同': 'warning',
-    '租金': 'success'
-  }
+  const map = { '报修': 'danger', '合同': 'warning', '租金': 'success', '审批': 'primary' }
   return map[type] || 'info'
 }
 
-// Charts
-const occupancyChartRef = ref(null)
-const incomeChartRef = ref(null)
-let occupancyChart = null
-let incomeChart = null
-
-const initOccupancyChart = () => {
-  if (!occupancyChartRef.value) return
-  occupancyChart = echarts.init(occupancyChartRef.value)
-  const option = {
-    tooltip: {
-      trigger: 'item'
-    },
-    legend: {
-      top: '5%',
-      left: 'center'
-    },
-    series: [
-      {
-        name: '房源状态',
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 20,
-            fontWeight: 'bold'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: [
-          { value: 98, name: '已租', itemStyle: { color: '#67C23A' } },
-          { value: 20, name: '未租', itemStyle: { color: '#E6A23C' } },
-          { value: 10, name: '下架', itemStyle: { color: '#909399' } }
-        ]
-      }
-    ]
+const getNotices = async () => {
+  try {
+    const res = await api.get('/api/announcements/published')
+    console.log('Announcements response:', res) // Debug log
+    if (res?.code === 200) {
+      noticeList.value = res.data || []
+    } else {
+      console.warn('获取公告失败，状态码非200:', res)
+    }
+  } catch (e) {
+    console.error('获取公告失败', e)
   }
-  occupancyChart.setOption(option)
 }
 
-const initIncomeChart = () => {
-  if (!incomeChartRef.value) return
-  incomeChart = echarts.init(incomeChartRef.value)
-  const option = {
-    tooltip: {
-      trigger: 'axis'
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月']
-    },
-    yAxis: {
-      type: 'value'
-    },
-    series: [
-      {
-        name: '租金收入',
-        type: 'line',
-        stack: 'Total',
-        smooth: true,
-        areaStyle: {},
-        data: [82000, 93200, 90100, 93400, 129000, 133000, 132000],
-        itemStyle: { color: '#409EFF' },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(64,158,255,0.5)' },
-            { offset: 1, color: 'rgba(64,158,255,0.1)' }
-          ])
-        }
-      }
-    ]
-  }
-  incomeChart.setOption(option)
-}
-
-const handleResize = () => {
-  occupancyChart?.resize()
-  incomeChart?.resize()
+const showNotice = (notice) => {
+  Object.assign(currentNotice, notice)
+  dialogVisible.value = true
 }
 
 onMounted(() => {
-  initOccupancyChart()
-  initIncomeChart()
-  window.addEventListener('resize', handleResize)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
-  occupancyChart?.dispose()
-  incomeChart?.dispose()
+  getNotices()
 })
 </script>
 
@@ -210,38 +136,72 @@ onBeforeUnmount(() => {
 .dashboard-container {
   padding: 20px;
 }
-
-.stat-card {
-  height: 120px;
+.welcome-card {
   margin-bottom: 20px;
+  background: linear-gradient(135deg, #fff 0%, #f0f9eb 100%);
 }
-
-.card-title {
-  font-size: 14px;
+.welcome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.welcome-text h2 {
+  margin: 0 0 10px 0;
+  color: #303133;
+}
+.welcome-text p {
+  margin: 0;
   color: #909399;
 }
-
-.card-value {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 10px 0;
+.todo-card {
+  margin-bottom: 20px;
+  min-height: 300px;
 }
-
-.card-footer {
+.notice-card {
+  height: 460px;
+  overflow: hidden;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notice-list {
+  padding: 10px;
+}
+.notice-item-content {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+.notice-item-content:hover {
+  background-color: #f5f7fa;
+}
+.notice-title {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+:deep(.el-timeline-item__timestamp) {
   font-size: 12px;
   color: #909399;
 }
-
-.chart-row, .table-row {
-  margin-top: 20px;
+:deep(.el-timeline) {
+  padding-left: 10px;
 }
-
-.chart-card {
-  height: 380px;
+.notice-content {
+  line-height: 1.6;
+  min-height: 100px;
 }
-
-.chart-container {
-  height: 300px;
+.dialog-footer {
   width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notice-meta {
+  font-size: 12px;
+  color: #909399;
 }
 </style>

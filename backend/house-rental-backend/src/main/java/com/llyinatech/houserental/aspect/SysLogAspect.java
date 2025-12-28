@@ -1,6 +1,7 @@
 package com.llyinatech.houserental.aspect;
 
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
+import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.service.SysLogService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -47,6 +48,16 @@ public class SysLogAspect {
         try {
             // 执行方法
             result = point.proceed();
+
+            // 检查返回值，如果业务状态码不为200，标记为失败
+            if (result instanceof Result) {
+                Result<?> r = (Result<?>) result;
+                if (r.getCode() != 200) {
+                    status = "失败";
+                    errorMsg = r.getMessage();
+                }
+            }
+
             return result;
         } catch (Exception e) {
             status = "失败";
@@ -71,8 +82,8 @@ public class SysLogAspect {
 
         SysLogAnnotation sysLog = method.getAnnotation(SysLogAnnotation.class);
         if (sysLog != null) {
-            String module = sysLog.module();
-            String action = sysLog.action();
+            String module = sysLog.module().getValue();
+            String action = sysLog.action().getValue();
             String detail = sysLog.detail();
 
             // 如果失败，添加错误信息

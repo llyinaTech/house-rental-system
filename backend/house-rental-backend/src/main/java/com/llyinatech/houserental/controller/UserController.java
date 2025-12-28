@@ -1,10 +1,12 @@
 package com.llyinatech.houserental.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.entity.User;
+import com.llyinatech.houserental.enums.ActionEnum;
+import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +28,22 @@ public class UserController {
      */
     @GetMapping("/page")
     public Result<Page<User>> page(@RequestParam(defaultValue = "1") Integer current,
-                                     @RequestParam(defaultValue = "10") Integer size) {
-        Page<User> page = userService.page(new Page<>(current, size));
+                                     @RequestParam(defaultValue = "10") Integer size,
+                                     @RequestParam(required = false) String username,
+                                     @RequestParam(required = false) String phone,
+                                     @RequestParam(required = false) Integer status) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        if (username != null && !username.isEmpty()) {
+            wrapper.like(User::getUsername, username);
+        }
+        if (phone != null && !phone.isEmpty()) {
+            wrapper.like(User::getPhone, phone);
+        }
+        if (status != null) {
+            wrapper.eq(User::getStatus, status);
+        }
+        wrapper.orderByDesc(User::getCreateTime);
+        Page<User> page = userService.page(new Page<>(current, size), wrapper);
         return Result.success(page);
     }
 
@@ -43,7 +59,7 @@ public class UserController {
     /**
      * 新增用户
      */
-    @SysLogAnnotation(module = "用户管理", action = "新增", detail = "新增用户")
+    @SysLogAnnotation(module = ModuleEnum.USER_MANAGEMENT, action = ActionEnum.ADD, detail = "新增用户")
     @PostMapping
     public Result<String> save(@RequestBody User user) {
         userService.save(user);
@@ -53,7 +69,7 @@ public class UserController {
     /**
      * 修改用户
      */
-    @SysLogAnnotation(module = "用户管理", action = "修改", detail = "修改用户信息")
+    @SysLogAnnotation(module = ModuleEnum.USER_MANAGEMENT, action = ActionEnum.MODIFY, detail = "修改用户信息")
     @PutMapping
     public Result<String> update(@RequestBody User user) {
         userService.updateById(user);
@@ -63,7 +79,7 @@ public class UserController {
     /**
      * 删除用户
      */
-    @SysLogAnnotation(module = "用户管理", action = "删除", detail = "删除用户")
+    @SysLogAnnotation(module = ModuleEnum.USER_MANAGEMENT, action = ActionEnum.DELETE, detail = "删除用户")
     @DeleteMapping("/{id}")
     public Result<String> delete(@PathVariable Long id) {
         userService.removeById(id);
@@ -73,7 +89,7 @@ public class UserController {
     /**
      * 批量删除用户
      */
-    @SysLogAnnotation(module = "用户管理", action = "删除", detail = "批量删除用户")
+    @SysLogAnnotation(module = ModuleEnum.USER_MANAGEMENT, action = ActionEnum.DELETE, detail = "批量删除用户")
     @DeleteMapping("/batch")
     public Result<String> deleteBatch(@RequestBody List<Long> ids) {
         userService.removeByIds(ids);

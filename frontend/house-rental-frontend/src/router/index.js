@@ -19,7 +19,6 @@ const routes = [
       { path: 'system/notices', name: 'NoticeManagement', component: () => import('@/views/system/NoticeManagement.vue'), meta: { requiresAuth: true, title: '公告管理' } },
       
       // House Management
-      { path: 'house/regions', name: 'RegionManagement', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true, title: '区域管理' } },
       { path: 'house/list', name: 'HouseInfo', component: () => import('@/views/Listings.vue'), meta: { requiresAuth: true, title: '房源信息' } },
       
       // Contract Management
@@ -27,7 +26,7 @@ const routes = [
       
       // Finance Management
       { path: 'finance/bills', name: 'RentBills', component: () => import('@/views/finance/RentBills.vue'), meta: { requiresAuth: true, title: '租金账单' } },
-      { path: 'finance/stats', name: 'Statistics', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true, title: '财务统计' } },
+      { path: 'finance/stats', name: 'Statistics', component: () => import('@/views/finance/Statistics.vue'), meta: { requiresAuth: true, title: '财务统计' } },
       
       // Service Management
       { path: 'service/repairs', name: 'RepairOrders', component: () => import('@/views/service/RepairOrders.vue'), meta: { requiresAuth: true, title: '报修工单' } },

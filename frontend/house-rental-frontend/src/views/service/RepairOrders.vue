@@ -138,7 +138,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, CircleCheck } from '@element-plus/icons-vue'
-// 可切换为真实接口：import api from '@/api/request'
+import api from '@/api/request'
 
 const loading = ref(false)
 const total = ref(0)
@@ -174,12 +174,14 @@ const rules = {
   content: [{ required: true, message: '请输入详情', trigger: 'blur' }]
 }
 
-// 模拟数据
-const mockData = [
-  { id: 101, title: '厨房水龙头漏水', houseId: 5001, tenantId: 3001, content: '水龙头持续滴水，影响使用', status: 0, createTime: '2023-10-25 10:00:00' },
-  { id: 102, title: '卧室空调不制冷', houseId: 5002, tenantId: 3002, content: '空调只能吹风，无法制冷', status: 1, createTime: '2023-10-26 14:30:00' },
-  { id: 103, title: '门锁卡顿难以打开', houseId: 5003, tenantId: 3003, content: '门锁旋转不顺畅，偶尔卡住', status: 2, createTime: '2023-10-27 09:20:00' }
-]
+const toStart = (d) => {
+  if (!d) return undefined
+  return Array.isArray(d) && d[0] ? d[0] : undefined
+}
+const toEnd = (d) => {
+  if (!d) return undefined
+  return Array.isArray(d) && d[1] ? d[1] : undefined
+}
 
 const getStatusLabel = (s) => {
   const map = { 0: '待处理', 1: '处理中', 2: '已完结', 3: '已取消' }
@@ -190,19 +192,31 @@ const getStatusTag = (s) => {
   return map[s] || 'info'
 }
 
-const getList = () => {
+const getList = async () => {
   loading.value = true
-  setTimeout(() => {
-    let filtered = mockData.filter(item => {
-      if (queryParams.title && !item.title.includes(queryParams.title)) return false
-      if (queryParams.status !== undefined && item.status !== queryParams.status) return false
-      return true
+  try {
+    const res = await api.get('/api/repair-order/page', {
+      params: {
+        current: queryParams.pageNum,
+        size: queryParams.pageSize,
+        title: queryParams.title || undefined,
+        status: queryParams.status,
+        startDateBegin: toStart(queryParams.dateRange),
+        startDateEnd: toEnd(queryParams.dateRange)
+      }
     })
-    total.value = filtered.length
-    const start = (queryParams.pageNum - 1) * queryParams.pageSize
-    list.value = filtered.slice(start, start + queryParams.pageSize)
+    if (res?.code === 200 && res?.data) {
+      const page = res.data
+      list.value = page.records || []
+      total.value = page.total || 0
+    } else {
+      ElMessage.error(res?.message || '获取报修列表失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '获取报修列表失败')
+  } finally {
     loading.value = false
-  }, 400)
+  }
 }
 
 const handleQuery = () => {
@@ -223,16 +237,34 @@ const handleAdd = () => {
   dialog.visible = true
 }
 
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   resetForm()
-  Object.assign(form, row)
-  dialog.title = '编辑报修'
-  dialog.visible = true
+  try {
+    const res = await api.get(`/api/repair-order/${row.id}`)
+    if (res?.code === 200 && res?.data) {
+      Object.assign(form, res.data || {})
+      dialog.title = '编辑报修'
+      dialog.visible = true
+    } else {
+      ElMessage.error(res?.message || '获取报修详情失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '获取报修详情失败')
+  }
 }
 
-const handleProgress = (row) => {
-  row.status = 1
-  ElMessage.success('已开始处理该报修')
+const handleProgress = async (row) => {
+  try {
+    const res = await api.put(`/api/repair-order/start/${row.id}`)
+    if (res?.code === 200) {
+      ElMessage.success('已开始处理该报修')
+      getList()
+    } else {
+      ElMessage.error(res?.message || '操作失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '操作失败')
+  }
 }
 
 const handleDelete = (row) => {
@@ -240,35 +272,46 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    const index = list.value.findIndex(item => item.id === row.id)
-    if (index !== -1) {
-      list.value.splice(index, 1)
+  }).then(async () => {
+    try {
+      const res = await api.delete(`/api/repair-order/${row.id}`)
+      if (res?.code === 200) {
+        ElMessage.success('删除成功')
+        getList()
+      } else {
+        ElMessage.error(res?.message || '删除失败')
+      }
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '删除失败')
     }
-    ElMessage.success('删除成功')
   }).catch(() => {})
 }
 
 const submitForm = () => {
-  formRef.value.validate((valid) => {
-    if (valid) {
+  formRef.value.validate(async (valid) => {
+    if (!valid) return
+    try {
       if (form.id) {
-        const idx = mockData.findIndex(item => item.id === form.id)
-        if (idx !== -1) {
-          mockData[idx] = { ...mockData[idx], ...form }
+        const res = await api.put('/api/repair-order', form)
+        if (res?.code === 200) {
+          ElMessage.success('修改成功')
+        } else {
+          ElMessage.error(res?.message || '修改失败')
+          return
         }
-        ElMessage.success('修改成功')
       } else {
-        const newItem = {
-          id: Math.floor(Math.random() * 10000) + 100,
-          ...form,
-          createTime: new Date().toLocaleString().replace(/\//g, '-')
+        const res = await api.post('/api/repair-order', form)
+        if (res?.code === 200) {
+          ElMessage.success('提交成功')
+        } else {
+          ElMessage.error(res?.message || '提交失败')
+          return
         }
-        mockData.unshift(newItem)
-        ElMessage.success('提交成功')
       }
       dialog.visible = false
       getList()
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '提交失败')
     }
   })
 }

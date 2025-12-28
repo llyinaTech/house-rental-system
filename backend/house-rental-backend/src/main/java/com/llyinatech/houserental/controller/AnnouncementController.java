@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.entity.Announcement;
+import com.llyinatech.houserental.entity.User;
+import com.llyinatech.houserental.enums.ActionEnum;
+import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.security.UserDetailsImpl;
 import com.llyinatech.houserental.service.AnnouncementService;
 import com.llyinatech.houserental.service.UserService;
@@ -22,7 +25,7 @@ import java.util.List;
  */
 @Tag(name = "公告管理", description = "公告管理相关接口")
 @RestController
-@RequestMapping("/announcements")
+@RequestMapping("/api/announcements")
 @RequiredArgsConstructor
 public class AnnouncementController {
 
@@ -67,7 +70,7 @@ public class AnnouncementController {
     /**
      * 新增公告
      */
-    @SysLogAnnotation(module = "公告管理", action = "新增", detail = "新增公告")
+    @SysLogAnnotation(module = ModuleEnum.ANNOUNCEMENT_MANAGEMENT, action = ActionEnum.ADD, detail = "新增公告")
     @Operation(summary = "新增公告")
     @PostMapping
     public Result<String> addAnnouncement(@RequestBody Announcement announcement) {
@@ -80,14 +83,14 @@ public class AnnouncementController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         // 获取用户真实姓名
         String realName = getUserRealName(userDetails.getId(), userDetails.getUsername());
-        announcementService.publishAnnouncement(announcement, userDetails.getId(), realName);
+        announcementService.createAnnouncementDraft(announcement, userDetails.getId(), realName);
         return Result.success("新增公告成功");
     }
 
     /**
      * 修改公告
      */
-    @SysLogAnnotation(module = "公告管理", action = "修改", detail = "修改公告")
+    @SysLogAnnotation(module = ModuleEnum.ANNOUNCEMENT_MANAGEMENT, action = ActionEnum.MODIFY, detail = "修改公告")
     @Operation(summary = "修改公告")
     @PutMapping("/{id}")
     public Result<String> updateAnnouncement(@PathVariable Long id, @RequestBody Announcement announcement) {
@@ -101,14 +104,14 @@ public class AnnouncementController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         // 获取用户真实姓名
         String realName = getUserRealName(userDetails.getId(), userDetails.getUsername());
-        announcementService.publishAnnouncement(announcement, userDetails.getId(), realName);
+        announcementService.updateAnnouncement(announcement, userDetails.getId(), realName);
         return Result.success("修改公告成功");
     }
 
     /**
      * 删除公告
      */
-    @SysLogAnnotation(module = "公告管理", action = "删除", detail = "删除公告")
+    @SysLogAnnotation(module = ModuleEnum.ANNOUNCEMENT_MANAGEMENT, action = ActionEnum.DELETE, detail = "删除公告")
     @Operation(summary = "删除公告")
     @DeleteMapping("/{id}")
     public Result<String> deleteAnnouncement(@PathVariable Long id) {
@@ -119,7 +122,7 @@ public class AnnouncementController {
     /**
      * 批量删除公告
      */
-    @SysLogAnnotation(module = "公告管理", action = "删除", detail = "批量删除公告")
+    @SysLogAnnotation(module = ModuleEnum.ANNOUNCEMENT_MANAGEMENT, action = ActionEnum.DELETE, detail = "批量删除公告")
     @Operation(summary = "批量删除公告")
     @DeleteMapping("/batch")
     public Result<String> deleteBatch(@RequestBody List<Long> ids) {
@@ -130,13 +133,13 @@ public class AnnouncementController {
     /**
      * 发布公告
      */
-    @SysLogAnnotation(module = "公告管理", action = "发布", detail = "发布公告")
+    @SysLogAnnotation(module = ModuleEnum.ANNOUNCEMENT_MANAGEMENT, action = ActionEnum.PUBLISH, detail = "发布公告")
     @Operation(summary = "发布公告")
     @PutMapping("/publish/{id}")
     public Result<String> publishAnnouncement(@PathVariable Long id) {
         // 获取当前用户信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+        if (!(authentication.getPrincipal() instanceof UserDetailsImpl userDetails)) {
             return Result.error("用户未登录");
         }
         
@@ -144,8 +147,7 @@ public class AnnouncementController {
         if (announcement == null) {
             return Result.error("公告不存在");
         }
-        
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
         // 获取用户真实姓名
         String realName = getUserRealName(userDetails.getId(), userDetails.getUsername());
         announcementService.publishAnnouncement(announcement, userDetails.getId(), realName);
@@ -155,7 +157,7 @@ public class AnnouncementController {
     /**
      * 撤销公告
      */
-    @SysLogAnnotation(module = "公告管理", action = "撤销", detail = "撤销公告")
+    @SysLogAnnotation(module = ModuleEnum.ANNOUNCEMENT_MANAGEMENT, action = ActionEnum.REVOKE, detail = "撤销公告")
     @Operation(summary = "撤销公告")
     @PutMapping("/revoke/{id}")
     public Result<String> revokeAnnouncement(@PathVariable Long id) {

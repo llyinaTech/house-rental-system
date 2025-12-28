@@ -55,7 +55,6 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
             </span>
             <span class="menu-text">房源管理</span>
           </template>
-          <el-menu-item index="/house/regions">区域管理</el-menu-item>
           <el-menu-item index="/house/list">房源信息</el-menu-item>
         </el-sub-menu>
 

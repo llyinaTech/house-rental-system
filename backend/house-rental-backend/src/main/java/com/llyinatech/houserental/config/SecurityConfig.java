@@ -91,6 +91,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 允许登录接口无需认证
                         .requestMatchers("/auth/**").permitAll()
+                        // 允许诊断接口无需认证
+                        .requestMatchers("/api/diag/**").permitAll()
+                        // 允许文件下载无需认证
+                        .requestMatchers("/api/file/download/**").permitAll()
                         // 允许Swagger相关接口无需认证
                         .requestMatchers(
                                 "/swagger-ui/**",

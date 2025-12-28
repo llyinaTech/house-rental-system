@@ -11,16 +11,11 @@
             @keyup.enter="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="类型" prop="type">
-          <el-select v-model="queryParams.type" placeholder="请选择类型" clearable>
-            <el-option label="通知" :value="1" />
-            <el-option label="公告" :value="2" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
             <el-option label="草稿" :value="0" />
             <el-option label="已发布" :value="1" />
+            <el-option label="已撤销" :value="2" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -51,29 +46,28 @@
       >
         <el-table-column type="index" label="序号" width="55" align="center" />
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="type" label="类型" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.type === 1 ? 'info' : 'warning'">
-              {{ scope.row.type === 1 ? '通知' : '公告' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column prop="content" label="内容" min-width="300" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-              {{ scope.row.status === 1 ? '已发布' : '草稿' }}
+            <el-tag :type="scope.row.status === 1 ? 'success' : (scope.row.status === 2 ? 'warning' : 'info')">
+              {{ scope.row.status === 1 ? '已发布' : (scope.row.status === 2 ? '已撤销' : '草稿') }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
-        <el-table-column label="操作" width="180" fixed="right" align="center">
+        <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="scope">
             <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
               <el-icon><Edit /></el-icon> 编辑
             </el-button>
             <el-button type="danger" link size="small" @click="handleDelete(scope.row)">
               <el-icon><Delete /></el-icon> 删除
+            </el-button>
+            <el-button v-if="scope.row.status !== 1" type="success" link size="small" @click="handlePublish(scope.row)">
+              发布
+            </el-button>
+            <el-button v-else type="warning" link size="small" @click="handleRevoke(scope.row)">
+              撤销
             </el-button>
           </template>
         </el-table-column>
@@ -104,12 +98,6 @@
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入公告标题" />
         </el-form-item>
-        <el-form-item label="类型" prop="type">
-          <el-radio-group v-model="form.type">
-            <el-radio :label="1">通知</el-radio>
-            <el-radio :label="2">公告</el-radio>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item label="内容" prop="content">
           <el-input
             v-model="form.content"
@@ -117,12 +105,6 @@
             :rows="5"
             placeholder="请输入公告内容"
           />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio :label="0">草稿</el-radio>
-            <el-radio :label="1">发布</el-radio>
-          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -139,13 +121,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import api from '@/api/request'
 
-// 模拟数据
-const mockData = [
-  { id: 1, title: '系统维护通知', type: 1, content: '系统将于本周六凌晨2:00进行维护，预计耗时2小时。', status: 1, createTime: '2023-10-25 10:00:00' },
-  { id: 2, title: '国庆放假安排', type: 2, content: '国庆节放假安排如下：10月1日至10月7日放假，共7天。', status: 1, createTime: '2023-09-28 09:00:00' },
-  { id: 3, title: '新功能上线预告', type: 2, content: '下个月将上线在线报修功能，敬请期待。', status: 0, createTime: '2023-10-26 14:30:00' },
-]
+const noticeRef = ref(null)
 
 const loading = ref(false)
 const total = ref(0)
@@ -155,7 +133,6 @@ const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
   title: '',
-  type: undefined,
   status: undefined
 })
 
@@ -167,42 +144,37 @@ const dialog = reactive({
 const form = reactive({
   id: undefined,
   title: '',
-  type: 1,
-  content: '',
-  status: 1
+  content: ''
 })
 
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-  content: [{ required: true, message: '请输入内容', trigger: 'blur' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  content: [{ required: true, message: '请输入内容', trigger: 'blur' }]
 }
 
-const noticeRef = ref(null)
-
-const getList = () => {
+const getList = async () => {
   loading.value = true
-  // 模拟接口调用
-  setTimeout(() => {
-    let list = [...mockData]
-    if (queryParams.title) {
-      list = list.filter(item => item.title.includes(queryParams.title))
+  try {
+    const res = await api.get('/api/announcements', {
+      params: {
+        pageNum: queryParams.pageNum,
+        pageSize: queryParams.pageSize,
+        title: queryParams.title || undefined,
+        status: queryParams.status
+      }
+    })
+    if (res?.code === 200 && res?.data) {
+      const page = res.data
+      noticeList.value = page.records || []
+      total.value = page.total || 0
+    } else {
+      ElMessage.error(res?.message || '获取公告列表失败')
     }
-    if (queryParams.type !== undefined) {
-      list = list.filter(item => item.type === queryParams.type)
-    }
-    if (queryParams.status !== undefined) {
-      list = list.filter(item => item.status === queryParams.status)
-    }
-    
-    total.value = list.length
-    // 简单的分页模拟
-    const start = (queryParams.pageNum - 1) * queryParams.pageSize
-    noticeList.value = list.slice(start, start + queryParams.pageSize)
-    
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '获取公告列表失败')
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
 const handleQuery = () => {
@@ -212,7 +184,6 @@ const handleQuery = () => {
 
 const resetQuery = () => {
   queryParams.title = ''
-  queryParams.type = undefined
   queryParams.status = undefined
   handleQuery()
 }
@@ -223,11 +194,23 @@ const handleAdd = () => {
   dialog.visible = true
 }
 
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   resetForm()
   dialog.title = '编辑公告'
-  Object.assign(form, row)
-  dialog.visible = true
+  try {
+    const res = await api.get(`/api/announcements/${row.id}`)
+    if (res?.code === 200 && res?.data) {
+      const data = res.data
+      form.id = data.id
+      form.title = data.title || ''
+      form.content = data.content || ''
+      dialog.visible = true
+    } else {
+      ElMessage.error(res?.message || '获取公告详情失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '获取公告详情失败')
+  }
 }
 
 const handleDelete = (row) => {
@@ -235,19 +218,52 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    ElMessage.success('删除成功')
-    // 这里需要实际调用删除接口，然后刷新列表
-    getList()
-  })
+  }).then(async () => {
+    try {
+      const res = await api.delete(`/api/announcements/${row.id}`)
+      if (res?.code === 200) {
+        ElMessage.success('删除成功')
+        getList()
+      } else {
+        ElMessage.error(res?.message || '删除失败')
+      }
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '删除失败')
+    }
+  }).catch(() => {})
 }
 
 const submitForm = () => {
-  noticeRef.value.validate((valid) => {
-    if (valid) {
-      ElMessage.success(form.id ? '修改成功' : '发布成功')
+  noticeRef.value.validate(async (valid) => {
+    if (!valid) return
+    try {
+      if (form.id) {
+        const res = await api.put(`/api/announcements/${form.id}`, {
+          title: form.title,
+          content: form.content
+        })
+        if (res?.code === 200) {
+          ElMessage.success('修改成功')
+        } else {
+          ElMessage.error(res?.message || '修改失败')
+          return
+        }
+      } else {
+        const createRes = await api.post('/api/announcements', {
+          title: form.title,
+          content: form.content
+        })
+        if (createRes?.code === 200) {
+          ElMessage.success('新增成功')
+        } else {
+          ElMessage.error(createRes?.message || '发布失败')
+          return
+        }
+      }
       dialog.visible = false
       getList()
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '提交失败')
     }
   })
 }
@@ -260,14 +276,40 @@ const cancel = () => {
 const resetForm = () => {
   form.id = undefined
   form.title = ''
-  form.type = 1
   form.content = ''
-  form.status = 1
 }
 
 onMounted(() => {
   getList()
 })
+
+const handlePublish = async (row) => {
+  try {
+    const res = await api.put(`/api/announcements/publish/${row.id}`)
+    if (res?.code === 200) {
+      ElMessage.success('发布成功')
+      getList()
+    } else {
+      ElMessage.error(res?.message || '发布失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '发布失败')
+  }
+}
+
+const handleRevoke = async (row) => {
+  try {
+    const res = await api.put(`/api/announcements/revoke/${row.id}`)
+    if (res?.code === 200) {
+      ElMessage.success('撤销成功')
+      getList()
+    } else {
+      ElMessage.error(res?.message || '撤销失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '撤销失败')
+  }
+}
 </script>
 
 <style scoped>

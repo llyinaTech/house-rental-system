@@ -150,6 +150,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import api from '@/api/request'
 
 const loading = ref(false)
 const total = ref(0)
@@ -197,35 +198,31 @@ const rules = {
   ]
 }
 
-// 模拟数据
-const mockData = [
-  { id: 1, username: 'admin', realName: '系统管理员', phone: '13800138000', userType: 1, status: 1, createTime: '2023-01-01 12:00:00' },
-  { id: 2, username: 'landlord1', realName: '张三房东', phone: '13900139000', userType: 2, status: 1, createTime: '2023-01-02 10:00:00' },
-  { id: 3, username: 'tenant1', realName: '李四租客', phone: '13700137000', userType: 3, status: 0, createTime: '2023-01-03 09:30:00' }
-]
-
 // 获取列表数据
-const getList = () => {
+const getList = async () => {
   loading.value = true
-  // 模拟API请求延迟
-  setTimeout(() => {
-    // 简单的本地过滤模拟
-    let list = mockData.filter(item => {
-      if (queryParams.username && !item.username.includes(queryParams.username)) return false
-      if (queryParams.phone && !item.phone.includes(queryParams.phone)) return false
-      if (queryParams.status !== undefined && item.status !== queryParams.status) return false
-      return true
+  try {
+    const res = await api.get('/api/user/page', {
+      params: {
+        current: queryParams.pageNum,
+        size: queryParams.pageSize,
+        username: queryParams.username || undefined,
+        phone: queryParams.phone || undefined,
+        status: queryParams.status
+      }
     })
-    
-    // 如果没有数据，使用模拟数据填充一下以便展示效果（仅开发阶段）
-    if (list.length === 0 && !queryParams.username && !queryParams.phone && queryParams.status === undefined) {
-       list = mockData
+    if (res?.code === 200 && res?.data) {
+      const page = res.data
+      userList.value = page.records || []
+      total.value = page.total || 0
+    } else {
+      ElMessage.error(res?.message || '获取用户列表失败')
     }
-
-    userList.value = list
-    total.value = list.length
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '获取用户列表失败')
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
 const getUserTypeLabel = (type) => {
@@ -268,43 +265,62 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    // 模拟删除
-    const index = userList.value.findIndex(item => item.id === row.id)
-    if (index !== -1) {
-      userList.value.splice(index, 1)
+  }).then(async () => {
+    try {
+      const res = await api.delete(`/api/user/${row.id}`)
+      if (res?.code === 200) {
+        ElMessage.success('删除成功')
+        getList()
+      } else {
+        ElMessage.error(res?.message || '删除失败')
+      }
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '删除失败')
     }
-    ElMessage.success('删除成功')
   }).catch(() => {})
 }
 
 const handleStatusChange = (row) => {
-  const text = row.status === 1 ? '启用' : '禁用'
-  ElMessage.success(`已${text}用户 ${row.username}`)
+  // 直接提交更新状态
+  api.put('/api/user', { ...row })
+    .then((res) => {
+      if (res?.code === 200) {
+        const text = row.status === 1 ? '启用' : '禁用'
+        ElMessage.success(`已${text}用户 ${row.username}`)
+      } else {
+        ElMessage.error(res?.message || '状态更新失败')
+      }
+    })
+    .catch((e) => {
+      ElMessage.error(e?.response?.data?.message || e.message || '状态更新失败')
+    })
 }
 
 const submitForm = () => {
-  userFormRef.value.validate((valid) => {
-    if (valid) {
+  userFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    try {
       if (form.id) {
-        // 模拟修改
-        const index = userList.value.findIndex(item => item.id === form.id)
-        if (index !== -1) {
-          userList.value[index] = { ...userList.value[index], ...form }
+        const res = await api.put('/api/user', { ...form })
+        if (res?.code === 200) {
+          ElMessage.success('修改成功')
+        } else {
+          ElMessage.error(res?.message || '修改失败')
+          return
         }
-        ElMessage.success('修改成功')
       } else {
-        // 模拟新增
-        const newUser = {
-          id: userList.value.length + 100,
-          ...form,
-          createTime: new Date().toLocaleString().replace(/\//g, '-')
+        const res = await api.post('/api/user', { ...form })
+        if (res?.code === 200) {
+          ElMessage.success('新增成功')
+        } else {
+          ElMessage.error(res?.message || '新增失败')
+          return
         }
-        userList.value.unshift(newUser)
-        ElMessage.success('新增成功')
       }
       dialog.visible = false
       getList()
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '提交失败')
     }
   })
 }

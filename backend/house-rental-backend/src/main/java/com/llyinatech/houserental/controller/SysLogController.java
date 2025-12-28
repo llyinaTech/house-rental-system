@@ -5,6 +5,8 @@ import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.dto.SysLogQueryDTO;
 import com.llyinatech.houserental.entity.SysLog;
+import com.llyinatech.houserental.enums.ActionEnum;
+import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.SysLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,7 +50,7 @@ public class SysLogController {
     /**
      * 删除日志
      */
-    @SysLogAnnotation(module = "系统日志", action = "删除", detail = "删除日志")
+    @SysLogAnnotation(module = ModuleEnum.SYSTEM_LOG, action = ActionEnum.DELETE, detail = "删除日志")
     @Operation(summary = "删除日志")
     @DeleteMapping("/{id}")
     public Result<String> delete(@PathVariable Long id) {
@@ -59,7 +61,7 @@ public class SysLogController {
     /**
      * 批量删除日志
      */
-    @SysLogAnnotation(module = "系统日志", action = "删除", detail = "批量删除日志")
+    @SysLogAnnotation(module = ModuleEnum.SYSTEM_LOG, action = ActionEnum.DELETE, detail = "批量删除日志")
     @Operation(summary = "批量删除日志")
     @DeleteMapping("/batch")
     public Result<String> deleteBatch(@RequestBody List<Long> ids) {
@@ -70,7 +72,7 @@ public class SysLogController {
     /**
      * 导出日志
      */
-    @SysLogAnnotation(module = "系统日志", action = "导出", detail = "导出日志")
+    @SysLogAnnotation(module = ModuleEnum.SYSTEM_LOG, action = ActionEnum.EXPORT, detail = "导出日志")
     @Operation(summary = "导出日志")
     @GetMapping("/export")
     public void export(SysLogQueryDTO queryDTO,

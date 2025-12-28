@@ -3,6 +3,8 @@ package com.llyinatech.houserental.controller;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.dto.LoginRequest;
+import com.llyinatech.houserental.enums.ActionEnum;
+import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.security.UserDetailsImpl;
 import com.llyinatech.houserental.util.JwtUtil;
 import com.llyinatech.houserental.vo.LoginResponse;
@@ -40,7 +42,7 @@ public class AuthController {
     /**
      * 用户登录
      */
-    @SysLogAnnotation(module = "系统登录", action = "登录", detail = "用户登录")
+    @SysLogAnnotation(module = ModuleEnum.SYSTEM_LOGIN, action = ActionEnum.LOGIN, detail = "用户登录")
     @Operation(summary = "用户登录", description = "通过用户名和密码登录，返回JWT令牌")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "登录成功",
@@ -94,7 +96,7 @@ public class AuthController {
     /**
      * 用户登出
      */
-    @SysLogAnnotation(module = "系统登录", action = "登出", detail = "用户登出")
+    @SysLogAnnotation(module = ModuleEnum.SYSTEM_LOGIN, action = ActionEnum.LOGOUT, detail = "用户登出")
     @Operation(summary = "用户登出", description = "清除当前用户的认证信息")
     @ApiResponse(responseCode = "200", description = "登出成功")
     @PostMapping("/logout")

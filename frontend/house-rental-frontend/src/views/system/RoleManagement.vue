@@ -19,12 +19,6 @@
             @keyup.enter="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
-            <el-option label="正常" :value="1" />
-            <el-option label="停用" :value="0" />
-          </el-select>
-        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleQuery">
             <el-icon><Search /></el-icon> 搜索
@@ -54,18 +48,6 @@
         <el-table-column type="index" label="序号" width="55" align="center" />
         <el-table-column prop="roleName" label="角色名称" min-width="120" />
         <el-table-column prop="roleKey" label="权限字符" min-width="120" />
-        <el-table-column prop="sortOrder" label="显示顺序" width="100" align="center" />
-        <el-table-column prop="status" label="状态" width="100" align="center">
-          <template #default="scope">
-            <el-switch
-              v-model="scope.row.status"
-              :active-value="1"
-              :inactive-value="0"
-              @change="handleStatusChange(scope.row)"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="scope">
             <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
@@ -109,15 +91,6 @@
         <el-form-item label="权限字符" prop="roleKey">
           <el-input v-model="form.roleKey" placeholder="请输入权限字符" />
         </el-form-item>
-        <el-form-item label="显示顺序" prop="sortOrder">
-          <el-input-number v-model="form.sortOrder" :min="0" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio :label="1">正常</el-radio>
-            <el-radio :label="0">停用</el-radio>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
         </el-form-item>
@@ -136,6 +109,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, CircleCheck } from '@element-plus/icons-vue'
+import api from '@/api/request'
 
 const loading = ref(false)
 const total = ref(0)
@@ -146,8 +120,7 @@ const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
   roleName: '',
-  roleKey: '',
-  status: undefined
+  roleKey: ''
 })
 
 const dialog = reactive({
@@ -159,8 +132,6 @@ const form = reactive({
   id: undefined,
   roleName: '',
   roleKey: '',
-  sortOrder: 0,
-  status: 1,
   remark: ''
 })
 
@@ -171,37 +142,8 @@ const rules = {
   roleKey: [
     { required: true, message: '请输入权限字符', trigger: 'blur' }
   ],
-  sortOrder: [
-    { required: true, message: '请输入显示顺序', trigger: 'blur' }
-  ]
 }
 
-// 模拟数据
-const mockData = [
-  { id: 1, roleName: '超级管理员', roleKey: 'admin', sortOrder: 1, status: 1, createTime: '2023-01-01 12:00:00' },
-  { id: 2, roleName: '房东', roleKey: 'landlord', sortOrder: 2, status: 1, createTime: '2023-01-01 12:00:00' },
-  { id: 3, roleName: '租客', roleKey: 'tenant', sortOrder: 3, status: 1, createTime: '2023-01-01 12:00:00' }
-]
-
-const getList = () => {
-  loading.value = true
-  setTimeout(() => {
-    let list = mockData.filter(item => {
-      if (queryParams.roleName && !item.roleName.includes(queryParams.roleName)) return false
-      if (queryParams.roleKey && !item.roleKey.includes(queryParams.roleKey)) return false
-      if (queryParams.status !== undefined && item.status !== queryParams.status) return false
-      return true
-    })
-    
-    if (list.length === 0 && !queryParams.roleName && !queryParams.roleKey && queryParams.status === undefined) {
-       list = mockData
-    }
-
-    roleList.value = list
-    total.value = list.length
-    loading.value = false
-  }, 500)
-}
 
 const handleQuery = () => {
   queryParams.pageNum = 1
@@ -211,7 +153,6 @@ const handleQuery = () => {
 const resetQuery = () => {
   queryParams.roleName = ''
   queryParams.roleKey = ''
-  queryParams.status = undefined
   handleQuery()
 }
 
@@ -237,40 +178,52 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    const index = roleList.value.findIndex(item => item.id === row.id)
-    if (index !== -1) {
-      roleList.value.splice(index, 1)
+  }).then(async () => {
+    try {
+      const res = await api.delete(`/api/role/${row.id}`)
+      if (res?.code === 200) {
+        ElMessage.success('删除成功')
+        getList()
+      } else {
+        ElMessage.error(res?.message || '删除失败')
+      }
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '删除失败')
     }
-    ElMessage.success('删除成功')
   }).catch(() => {})
 }
 
-const handleStatusChange = (row) => {
-  const text = row.status === 1 ? '启用' : '停用'
-  ElMessage.success(`已${text}角色 ${row.roleName}`)
-}
-
 const submitForm = () => {
-  roleFormRef.value.validate((valid) => {
-    if (valid) {
+  roleFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    const payload = {
+      id: form.id,
+      roleName: form.roleName,
+      roleKey: form.roleKey,
+      remark: form.remark
+    }
+    try {
       if (form.id) {
-        const index = roleList.value.findIndex(item => item.id === form.id)
-        if (index !== -1) {
-          roleList.value[index] = { ...roleList.value[index], ...form }
+        const res = await api.put('/api/role', payload)
+        if (res?.code === 200) {
+          ElMessage.success('修改成功')
+        } else {
+          ElMessage.error(res?.message || '修改失败')
+          return
         }
-        ElMessage.success('修改成功')
       } else {
-        const newRole = {
-          id: roleList.value.length + 100,
-          ...form,
-          createTime: new Date().toLocaleString().replace(/\//g, '-')
+        const res = await api.post('/api/role', payload)
+        if (res?.code === 200) {
+          ElMessage.success('新增成功')
+        } else {
+          ElMessage.error(res?.message || '新增失败')
+          return
         }
-        roleList.value.push(newRole)
-        ElMessage.success('新增成功')
       }
       dialog.visible = false
       getList()
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '提交失败')
     }
   })
 }
@@ -284,14 +237,37 @@ const resetForm = () => {
   form.id = undefined
   form.roleName = ''
   form.roleKey = ''
-  form.sortOrder = 0
-  form.status = 1
   form.remark = ''
 }
 
 onMounted(() => {
   getList()
 })
+
+const getList = async () => {
+  loading.value = true
+  try {
+    const res = await api.get('/api/role/page', {
+      params: {
+        current: queryParams.pageNum,
+        size: queryParams.pageSize,
+        roleName: queryParams.roleName || undefined,
+        roleKey: queryParams.roleKey || undefined
+      }
+    })
+    if (res?.code === 200 && res?.data) {
+      const page = res.data
+      roleList.value = page.records || []
+      total.value = page.total || 0
+    } else {
+      ElMessage.error(res?.message || '获取角色列表失败')
+    }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e.message || '获取角色列表失败')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>

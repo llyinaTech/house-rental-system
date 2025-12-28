@@ -1,5 +1,8 @@
 package com.llyinatech.houserental.annotation;
 
+import com.llyinatech.houserental.enums.ActionEnum;
+import com.llyinatech.houserental.enums.ModuleEnum;
+
 import java.lang.annotation.*;
 
 /**
@@ -14,12 +17,12 @@ public @interface SysLogAnnotation {
     /**
      * 操作模块
      */
-    String module() default "";
+    ModuleEnum module() default ModuleEnum.SYSTEM_LOGIN;
 
     /**
      * 操作类型
      */
-    String action() default "";
+    ActionEnum action();
 
     /**
      * 详细信息（支持SpEL表达式）

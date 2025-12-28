@@ -98,13 +98,13 @@
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
-          v-model:current-page="queryParams.pageNum"
-          v-model:page-size="queryParams.pageSize"
+          v-model:current-page="queryParams.current"
+          v-model:page-size="queryParams.size"
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total"
-          @size-change="handleQuery"
-          @current-change="handleQuery"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         />
       </div>
     </el-card>
@@ -145,8 +145,8 @@ const detail = reactive({
 })
 
 const queryParams = reactive({
-  pageNum: 1,
-  pageSize: 10,
+  current: 1,
+  size: 10,
   module: '',
   username: '',
   action: '',
@@ -163,8 +163,8 @@ const getList = async () => {
         action: queryParams.action || undefined,
         startTime: Array.isArray(queryParams.dateRange) && queryParams.dateRange[0] ? queryParams.dateRange[0] : undefined,
         endTime: Array.isArray(queryParams.dateRange) && queryParams.dateRange[1] ? queryParams.dateRange[1] : undefined,
-        current: queryParams.pageNum,
-        size: queryParams.pageSize
+        current: queryParams.current,
+        size: queryParams.size
       }
     })
     if (res?.code === 200 && res?.data) {
@@ -193,8 +193,19 @@ const getActionTag = (action) => {
   return map[action] || ''
 }
 
+const handleSizeChange = (val) => {
+  queryParams.size = val
+  queryParams.current = 1
+  getList()
+}
+
+const handleCurrentChange = (val) => {
+  queryParams.current = val
+  getList()
+}
+
 const handleQuery = () => {
-  queryParams.pageNum = 1
+  queryParams.current = 1
   getList()
 }
 

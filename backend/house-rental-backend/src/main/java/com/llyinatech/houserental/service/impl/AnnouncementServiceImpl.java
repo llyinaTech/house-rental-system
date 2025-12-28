@@ -59,6 +59,28 @@ public class AnnouncementServiceImpl extends ServiceImpl<AnnouncementMapper, Ann
     }
 
     @Override
+    public void createAnnouncementDraft(Announcement announcement, Long userId, String realName) {
+        // 新增为草稿
+        announcement.setUserId(userId);
+        announcement.setUserName(realName);
+        announcement.setStatus(0); // 草稿
+        announcement.setPublishTime(null);
+        announcement.setCreateTime(LocalDateTime.now());
+        announcement.setUpdateTime(LocalDateTime.now());
+        this.save(announcement);
+    }
+
+    @Override
+    public void updateAnnouncement(Announcement announcement, Long userId, String realName) {
+        announcement.setUserId(userId);
+        announcement.setUserName(realName);
+        announcement.setUpdateTime(LocalDateTime.now());
+        announcement.setStatus(0);
+        announcement.setPublishTime(null);
+        this.updateById(announcement);
+    }
+
+    @Override
     public void revokeAnnouncement(Long id) {
         Announcement announcement = this.getById(id);
         if (announcement != null) {

@@ -54,8 +54,9 @@
         <el-table-column prop="reminderCount" label="提醒次数" width="100" align="center" />
         <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="scope">
-            <el-button type="success" link size="small" :disabled="scope.row.payStatus === 1" @click="handlePay(scope.row)">支付</el-button>
+            <el-button v-if="!isAdmin" type="success" link size="small" :disabled="scope.row.payStatus === 1" @click="handlePay(scope.row)">支付</el-button>
             <el-button type="primary" link size="small" @click="handleView(scope.row)">查看</el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -253,6 +254,26 @@ const handlePay = (row) => {
       }
     } catch (e) {
       ElMessage.error(e?.response?.data?.message || e.message || '支付失败')
+    }
+  }).catch(() => {})
+}
+
+const handleDelete = (row) => {
+  ElMessageBox.confirm('确认删除该账单吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      const res = await api.delete(`/api/rent-bill/${row.id}`)
+      if (res?.code === 200) {
+        ElMessage.success('删除成功')
+        getList()
+      } else {
+        ElMessage.error(res?.message || '删除失败')
+      }
+    } catch (e) {
+      ElMessage.error(e?.response?.data?.message || e.message || '删除失败')
     }
   }).catch(() => {})
 }

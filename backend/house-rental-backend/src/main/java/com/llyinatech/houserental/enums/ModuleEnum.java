@@ -5,6 +5,7 @@ package com.llyinatech.houserental.enums;
  */
 public enum ModuleEnum {
     USER_MANAGEMENT("用户管理"),
+    ROLE_MANAGEMENT("角色管理"),
     HOUSE_MANAGEMENT("房源管理"),
     CONTRACT_MANAGEMENT("合同管理"),
     FINANCE_MANAGEMENT("财务管理"),

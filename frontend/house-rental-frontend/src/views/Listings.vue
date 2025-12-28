@@ -5,8 +5,16 @@
         <el-form-item label="标题" prop="title">
           <el-input v-model="queryParams.title" placeholder="请输入房源标题" clearable @keyup.enter="handleQuery" />
         </el-form-item>
-        <el-form-item label="区域ID" prop="regionId">
-          <el-input v-model="queryParams.regionId" placeholder="区域ID" clearable @keyup.enter="handleQuery" />
+        <el-form-item label="区域" prop="regionId">
+          <el-tree-select
+            v-model="queryParams.regionId"
+            :data="regionOptions"
+            :props="{ label: 'name', value: 'id', children: 'children' }"
+            placeholder="请选择区域"
+            clearable
+            check-strictly
+            style="width: 200px"
+          />
         </el-form-item>
         <el-form-item label="租赁状态" prop="rentStatus">
           <el-select v-model="queryParams.rentStatus" placeholder="请选择租赁状态" clearable>
@@ -93,6 +101,17 @@
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入房源标题" />
         </el-form-item>
+        <el-form-item label="所属区域" prop="regionId">
+          <el-tree-select
+            v-model="form.regionId"
+            :data="regionOptions"
+            :props="{ label: 'name', value: 'id', children: 'children' }"
+            placeholder="请选择所属区域"
+            clearable
+            check-strictly
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item label="详细地址" prop="address">
           <el-input v-model="form.address" placeholder="请输入详细地址" />
         </el-form-item>
@@ -153,6 +172,7 @@ import api from '@/api/request'
 const loading = ref(false)
 const total = ref(0)
 const list = ref([])
+const regionOptions = ref([])
 const formRef = ref(null)
 
 const queryParams = reactive({
@@ -174,6 +194,7 @@ const dialog = reactive({
 const form = reactive({
   id: undefined,
   title: '',
+  regionId: undefined,
   address: '',
   price: '',
   area: '',
@@ -207,7 +228,13 @@ const getList = async () => {
     const res = await api.get('/api/house/page', {
       params: {
         current: queryParams.pageNum,
-        size: queryParams.pageSize
+        size: queryParams.pageSize,
+        title: queryParams.title || undefined,
+        regionId: queryParams.regionId || undefined,
+        rentStatus: queryParams.rentStatus,
+        auditStatus: queryParams.auditStatus,
+        minPrice: queryParams.minPrice || undefined,
+        maxPrice: queryParams.maxPrice || undefined
       }
     })
     if (res?.code === 200 && res?.data) {
@@ -221,6 +248,17 @@ const getList = async () => {
     ElMessage.error(e?.response?.data?.message || e.message || '获取房源列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const getRegionTree = async () => {
+  try {
+    const res = await api.get('/api/region/tree')
+    if (res?.code === 200) {
+      regionOptions.value = res.data
+    }
+  } catch (e) {
+    console.error(e)
   }
 }
 
@@ -309,6 +347,7 @@ const cancel = () => {
 const resetForm = () => {
   form.id = undefined
   form.title = ''
+  form.regionId = undefined
   form.address = ''
   form.price = ''
   form.area = ''
@@ -324,6 +363,7 @@ const resetForm = () => {
 
 onMounted(() => {
   getList()
+  getRegionTree()
 })
 </script>
 

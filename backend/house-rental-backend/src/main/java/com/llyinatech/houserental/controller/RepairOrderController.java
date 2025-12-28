@@ -1,11 +1,12 @@
 package com.llyinatech.houserental.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.entity.RepairOrder;
 import com.llyinatech.houserental.service.RepairOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation::*;
 
 /**
  * 房屋报修Controller
@@ -39,6 +40,7 @@ public class RepairOrderController {
     /**
      * 新增报修
      */
+    @SysLogAnnotation(module = "报修管理", action = "新增", detail = "新增报修")
     @PostMapping
     public Result<String> save(@RequestBody RepairOrder repairOrder) {
         repairOrderService.save(repairOrder);
@@ -48,6 +50,7 @@ public class RepairOrderController {
     /**
      * 修改报修
      */
+    @SysLogAnnotation(module = "报修管理", action = "修改", detail = "修改报修")
     @PutMapping
     public Result<String> update(@RequestBody RepairOrder repairOrder) {
         repairOrderService.updateById(repairOrder);

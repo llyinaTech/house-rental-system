@@ -1,6 +1,7 @@
 package com.llyinatech.houserental.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.entity.LeaseContract;
 import com.llyinatech.houserental.service.LeaseContractService;
@@ -41,6 +42,7 @@ public class LeaseContractController {
     /**
      * 新增租赁合同
      */
+    @SysLogAnnotation(module = "合同管理", action = "新增", detail = "新增租赁合同")
     @PostMapping
     public Result<String> save(@RequestBody LeaseContract leaseContract) {
         leaseContractService.save(leaseContract);
@@ -50,6 +52,7 @@ public class LeaseContractController {
     /**
      * 修改租赁合同
      */
+    @SysLogAnnotation(module = "合同管理", action = "修改", detail = "修改租赁合同")
     @PutMapping
     public Result<String> update(@RequestBody LeaseContract leaseContract) {
         leaseContractService.updateById(leaseContract);
@@ -59,6 +62,7 @@ public class LeaseContractController {
     /**
      * 删除租赁合同
      */
+    @SysLogAnnotation(module = "合同管理", action = "删除", detail = "删除租赁合同")
     @DeleteMapping("/{id}")
     public Result<String> delete(@PathVariable Long id) {
         leaseContractService.removeById(id);

@@ -2,6 +2,7 @@ package com.llyinatech.houserental.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.entity.User;
 import com.llyinatech.houserental.service.UserService;
@@ -42,6 +43,7 @@ public class UserController {
     /**
      * 新增用户
      */
+    @SysLogAnnotation(module = "用户管理", action = "新增", detail = "新增用户")
     @PostMapping
     public Result<String> save(@RequestBody User user) {
         userService.save(user);
@@ -51,6 +53,7 @@ public class UserController {
     /**
      * 修改用户
      */
+    @SysLogAnnotation(module = "用户管理", action = "修改", detail = "修改用户信息")
     @PutMapping
     public Result<String> update(@RequestBody User user) {
         userService.updateById(user);
@@ -60,6 +63,7 @@ public class UserController {
     /**
      * 删除用户
      */
+    @SysLogAnnotation(module = "用户管理", action = "删除", detail = "删除用户")
     @DeleteMapping("/{id}")
     public Result<String> delete(@PathVariable Long id) {
         userService.removeById(id);
@@ -69,6 +73,7 @@ public class UserController {
     /**
      * 批量删除用户
      */
+    @SysLogAnnotation(module = "用户管理", action = "删除", detail = "批量删除用户")
     @DeleteMapping("/batch")
     public Result<String> deleteBatch(@RequestBody List<Long> ids) {
         userService.removeByIds(ids);

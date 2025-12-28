@@ -1,0 +1,348 @@
+<template>
+  <div class="app-container">
+    <!-- 搜索栏 -->
+    <el-card class="filter-container" shadow="never">
+      <el-form :inline="true" :model="queryParams" ref="queryForm">
+        <el-form-item label="用户名" prop="username">
+          <el-input
+            v-model="queryParams.username"
+            placeholder="请输入用户名"
+            clearable
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input
+            v-model="queryParams.phone"
+            placeholder="请输入手机号"
+            clearable
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+            <el-option label="正常" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleQuery">
+            <el-icon><Search /></el-icon> 搜索
+          </el-button>
+          <el-button @click="resetQuery">
+            <el-icon><Refresh /></el-icon> 重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 操作栏 -->
+    <div class="operation-container">
+      <el-button type="primary" @click="handleAdd">
+        <el-icon><Plus /></el-icon> 新增用户
+      </el-button>
+    </div>
+
+    <!-- 数据表格 -->
+    <el-card shadow="never">
+      <el-table
+        v-loading="loading"
+        :data="userList"
+        border
+        style="width: 100%"
+      >
+        <el-table-column type="index" label="序号" width="55" align="center" />
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="realName" label="真实姓名" min-width="120" />
+        <el-table-column prop="phone" label="手机号" width="120" />
+        <el-table-column prop="userType" label="用户类型" width="100">
+          <template #default="scope">
+            <el-tag :type="getUserTypeTag(scope.row.userType)">
+              {{ getUserTypeLabel(scope.row.userType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="80" align="center">
+          <template #default="scope">
+            <el-switch
+              v-model="scope.row.status"
+              :active-value="1"
+              :inactive-value="0"
+              @change="handleStatusChange(scope.row)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="操作" width="180" fixed="right" align="center">
+          <template #default="scope">
+            <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
+              <el-icon><Edit /></el-icon> 编辑
+            </el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(scope.row)">
+              <el-icon><Delete /></el-icon> 删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="queryParams.pageNum"
+          v-model:page-size="queryParams.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          @size-change="handleQuery"
+          @current-change="handleQuery"
+        />
+      </div>
+    </el-card>
+
+    <!-- 弹窗 -->
+    <el-dialog
+      :title="dialog.title"
+      v-model="dialog.visible"
+      width="500px"
+      @close="cancel"
+    >
+      <el-form ref="userFormRef" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" placeholder="请输入用户名" :disabled="!!form.id" />
+        </el-form-item>
+        <el-form-item label="真实姓名" prop="realName">
+          <el-input v-model="form.realName" placeholder="请输入真实姓名" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password" v-if="!form.id">
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="form.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="用户类型" prop="userType">
+          <el-select v-model="form.userType" placeholder="请选择用户类型">
+            <el-option label="管理员" :value="1" />
+            <el-option label="房东" :value="2" />
+            <el-option label="租客" :value="3" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio :label="1">正常</el-radio>
+            <el-radio :label="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
+
+const loading = ref(false)
+const total = ref(0)
+const userList = ref([])
+const userFormRef = ref(null)
+
+const queryParams = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  username: '',
+  phone: '',
+  status: undefined
+})
+
+const dialog = reactive({
+  title: '',
+  visible: false
+})
+
+const form = reactive({
+  id: undefined,
+  username: '',
+  realName: '',
+  password: '',
+  phone: '',
+  userType: 3,
+  status: 1,
+  remark: ''
+})
+
+const rules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+  ],
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+  ],
+  userType: [
+    { required: true, message: '请选择用户类型', trigger: 'change' }
+  ]
+}
+
+// 模拟数据
+const mockData = [
+  { id: 1, username: 'admin', realName: '系统管理员', phone: '13800138000', userType: 1, status: 1, createTime: '2023-01-01 12:00:00' },
+  { id: 2, username: 'landlord1', realName: '张三房东', phone: '13900139000', userType: 2, status: 1, createTime: '2023-01-02 10:00:00' },
+  { id: 3, username: 'tenant1', realName: '李四租客', phone: '13700137000', userType: 3, status: 0, createTime: '2023-01-03 09:30:00' }
+]
+
+// 获取列表数据
+const getList = () => {
+  loading.value = true
+  // 模拟API请求延迟
+  setTimeout(() => {
+    // 简单的本地过滤模拟
+    let list = mockData.filter(item => {
+      if (queryParams.username && !item.username.includes(queryParams.username)) return false
+      if (queryParams.phone && !item.phone.includes(queryParams.phone)) return false
+      if (queryParams.status !== undefined && item.status !== queryParams.status) return false
+      return true
+    })
+    
+    // 如果没有数据，使用模拟数据填充一下以便展示效果（仅开发阶段）
+    if (list.length === 0 && !queryParams.username && !queryParams.phone && queryParams.status === undefined) {
+       list = mockData
+    }
+
+    userList.value = list
+    total.value = list.length
+    loading.value = false
+  }, 500)
+}
+
+const getUserTypeLabel = (type) => {
+  const map = { 1: '管理员', 2: '房东', 3: '租客' }
+  return map[type] || '未知'
+}
+
+const getUserTypeTag = (type) => {
+  const map = { 1: 'danger', 2: 'warning', 3: 'success' }
+  return map[type] || 'info'
+}
+
+const handleQuery = () => {
+  queryParams.pageNum = 1
+  getList()
+}
+
+const resetQuery = () => {
+  queryParams.username = ''
+  queryParams.phone = ''
+  queryParams.status = undefined
+  handleQuery()
+}
+
+const handleAdd = () => {
+  resetForm()
+  dialog.title = '新增用户'
+  dialog.visible = true
+}
+
+const handleEdit = (row) => {
+  resetForm()
+  Object.assign(form, row)
+  dialog.title = '编辑用户'
+  dialog.visible = true
+}
+
+const handleDelete = (row) => {
+  ElMessageBox.confirm('确认要删除该用户吗？', '警告', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    // 模拟删除
+    const index = userList.value.findIndex(item => item.id === row.id)
+    if (index !== -1) {
+      userList.value.splice(index, 1)
+    }
+    ElMessage.success('删除成功')
+  }).catch(() => {})
+}
+
+const handleStatusChange = (row) => {
+  const text = row.status === 1 ? '启用' : '禁用'
+  ElMessage.success(`已${text}用户 ${row.username}`)
+}
+
+const submitForm = () => {
+  userFormRef.value.validate((valid) => {
+    if (valid) {
+      if (form.id) {
+        // 模拟修改
+        const index = userList.value.findIndex(item => item.id === form.id)
+        if (index !== -1) {
+          userList.value[index] = { ...userList.value[index], ...form }
+        }
+        ElMessage.success('修改成功')
+      } else {
+        // 模拟新增
+        const newUser = {
+          id: userList.value.length + 100,
+          ...form,
+          createTime: new Date().toLocaleString().replace(/\//g, '-')
+        }
+        userList.value.unshift(newUser)
+        ElMessage.success('新增成功')
+      }
+      dialog.visible = false
+      getList()
+    }
+  })
+}
+
+const cancel = () => {
+  dialog.visible = false
+  resetForm()
+}
+
+const resetForm = () => {
+  form.id = undefined
+  form.username = ''
+  form.realName = ''
+  form.password = ''
+  form.phone = ''
+  form.userType = 3
+  form.status = 1
+  form.remark = ''
+}
+
+onMounted(() => {
+  getList()
+})
+</script>
+
+<style scoped>
+.app-container {
+  padding: 20px;
+}
+.filter-container {
+  margin-bottom: 20px;
+}
+.operation-container {
+  margin-bottom: 20px;
+}
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>

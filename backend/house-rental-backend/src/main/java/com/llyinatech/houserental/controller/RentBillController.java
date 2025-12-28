@@ -1,11 +1,12 @@
 package com.llyinatech.houserental.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.entity.RentBill;
 import com.llyinatech.houserental.service.RentBillService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation::*;
 
 /**
  * 租金账单提醒Controller
@@ -39,6 +40,7 @@ public class RentBillController {
     /**
      * 新增账单
      */
+    @SysLogAnnotation(module = "财务管理", action = "新增", detail = "新增租金账单")
     @PostMapping
     public Result<String> save(@RequestBody RentBill rentBill) {
         rentBillService.save(rentBill);
@@ -48,6 +50,7 @@ public class RentBillController {
     /**
      * 支付账单
      */
+    @SysLogAnnotation(module = "财务管理", action = "支付", detail = "支付租金账单")
     @PutMapping("/pay/{id}")
     public Result<String> pay(@PathVariable Long id) {
         RentBill rentBill = rentBillService.getById(id);

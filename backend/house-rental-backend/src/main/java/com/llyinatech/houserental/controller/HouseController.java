@@ -1,6 +1,7 @@
 package com.llyinatech.houserental.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.entity.House;
 import com.llyinatech.houserental.service.HouseService;
@@ -41,6 +42,7 @@ public class HouseController {
     /**
      * 新增房源
      */
+    @SysLogAnnotation(module = "房源管理", action = "新增", detail = "新增房源")
     @PostMapping
     public Result<String> save(@RequestBody House house) {
         houseService.save(house);
@@ -50,6 +52,7 @@ public class HouseController {
     /**
      * 修改房源
      */
+    @SysLogAnnotation(module = "房源管理", action = "修改", detail = "修改房源")
     @PutMapping
     public Result<String> update(@RequestBody House house) {
         houseService.updateById(house);
@@ -59,6 +62,7 @@ public class HouseController {
     /**
      * 删除房源
      */
+    @SysLogAnnotation(module = "房源管理", action = "删除", detail = "删除房源")
     @DeleteMapping("/{id}")
     public Result<String> delete(@PathVariable Long id) {
         houseService.removeById(id);
@@ -68,6 +72,7 @@ public class HouseController {
     /**
      * 批量删除房源
      */
+    @SysLogAnnotation(module = "房源管理", action = "删除", detail = "批量删除房源")
     @DeleteMapping("/batch")
     public Result<String> deleteBatch(@RequestBody List<Long> ids) {
         houseService.removeByIds(ids);

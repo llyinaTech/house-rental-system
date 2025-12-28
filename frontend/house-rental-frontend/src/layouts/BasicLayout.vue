@@ -44,6 +44,7 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
           </template>
           <el-menu-item index="/system/users">用户管理</el-menu-item>
           <el-menu-item index="/system/roles">角色管理</el-menu-item>
+          <el-menu-item index="/system/notices">公告管理</el-menu-item>
           <el-menu-item index="/system/logs">日志管理</el-menu-item>
         </el-sub-menu>
 
@@ -96,7 +97,7 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
         <div class="header-left">
           <el-breadcrumb separator="/" class="breadcrumb">
             <el-breadcrumb-item>首页</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ route.name }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ route.meta.title }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">

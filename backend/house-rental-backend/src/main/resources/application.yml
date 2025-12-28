@@ -6,6 +6,12 @@ spring:
     url: jdbc:mysql://localhost:3306/house_rental?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: Lyc031021@
+  # Jackson日期格式化配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
 
 server:
   port: 8081
@@ -22,6 +28,8 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+  # 配置Mapper XML文件位置
+  mapper-locations: classpath:mapper/*.xml
 
 logging:
   level:
@@ -35,3 +43,33 @@ logging:
     max-size: 10MB
     max-history: 30
     total-size-cap: 1GB
+
+# JWT配置
+jwt:
+  # 签名密钥（生产环境需改为更复杂的密钥）
+  secret: house-rental-system-jwt-secret-key-2025-very-strong-secret
+  # 令牌有效期（毫秒），默认7天
+  expiration: 604800000
+  # 令牌前缀
+  token-prefix: Bearer
+  # 请求头名称
+  header: Authorization
+
+# Springdoc OpenAPI 配置
+springdoc:
+  api-docs:
+    # 启用 API 文档
+    enabled: true
+    # API 文档路径
+    path: /v3/api-docs
+  swagger-ui:
+    # 启用 Swagger UI
+    enabled: true
+    # Swagger UI 路径
+    path: /swagger-ui.html
+    # 持久化授权数据
+    persist-authorization: true
+    # 默认展开所有标签
+    tags-sorter: alpha
+    # 默认展开所有操作
+    operations-sorter: alpha

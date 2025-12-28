@@ -16,13 +16,6 @@
           <el-form-item prop="password">
             <el-input v-model="loginForm.password" size="large" type="password" placeholder="密码" show-password />
           </el-form-item>
-          <el-form-item prop="role">
-            <el-select v-model="loginForm.role" placeholder="选择身份" size="large" class="role-select">
-              <el-option label="租客" value="tenant" />
-              <el-option label="房东" value="landlord" />
-              <el-option label="管理员" value="admin" />
-            </el-select>
-          </el-form-item>
           <div class="form-extra">
             <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
             <a class="link" href="javascript:void(0)">忘记密码</a>
@@ -43,6 +36,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
+import api from '@/api/request'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -52,7 +46,6 @@ const loading = ref(false)
 const loginForm = reactive({
   username: '',
   password: '',
-  role: '',
   remember: true
 })
 
@@ -61,8 +54,7 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度至少为6位', trigger: 'blur' }
-  ],
-  role: [{ required: true, message: '请选择身份', trigger: 'change' }]
+  ]
 }
 
 const handleLogin = async () => {
@@ -71,18 +63,26 @@ const handleLogin = async () => {
     if (!valid) return
     loading.value = true
     try {
-      const mockUser = {
-        id: 1,
-        name: loginForm.username || '用户',
-        role: loginForm.role
+      const res = await api.post('/auth/login', {
+        username: loginForm.username,
+        password: loginForm.password,
+      })
+      if (res?.code === 200 && res?.data) {
+        const { token, id, username, roles } = res.data
+        auth.setToken(token)
+        auth.setUser({
+          id,
+          username,
+          role: Array.isArray(roles) && roles.length ? roles[0] : '',
+          roles: Array.isArray(roles) ? roles : [],
+        })
+        ElMessage.success('登录成功')
+        router.push('/dashboard')
+      } else {
+        ElMessage.error(res?.message || '登录失败')
       }
-      const mockToken = 'mock-token-' + Date.now()
-      auth.setToken(mockToken)
-      auth.setUser(mockUser)
-      ElMessage.success('登录成功')
-      router.push('/dashboard')
     } catch (error) {
-      ElMessage.error(error.message || '登录失败')
+      ElMessage.error(error?.response?.data?.message || error.message || '登录失败')
     } finally {
       loading.value = false
     }

@@ -1,3 +1,5 @@
+-- 删除数据库
+DROP DATABASE IF EXISTS house_rental;
 -- 创建数据库
 CREATE
 DATABASE IF NOT EXISTS house_rental DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -187,10 +189,13 @@ CREATE TABLE sys_log
 (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id     BIGINT COMMENT '操作人ID',
-    module      VARCHAR(50) COMMENT '模块 (合同/房源/财务)',
-    action      VARCHAR(50) COMMENT '动作 (新增/删除/支付)',
-    ip          VARCHAR(50) COMMENT 'IP地址',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+    username    VARCHAR(50) COMMENT '操作人用户名',
+    module      VARCHAR(50) COMMENT '操作模块 (用户管理/房源管理/合同管理/财务管理/系统登录)',
+    action      VARCHAR(50) COMMENT '操作类型 (新增/修改/删除/查询/登录/导出)',
+    ip          VARCHAR(50) COMMENT '操作IP地址',
+    status      VARCHAR(20) COMMENT '操作状态: 成功/失败',
+    detail      TEXT COMMENT '详细信息',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间'
 ) COMMENT '系统操作日志表';
 
 -- 统计报表中间表 (可选，用于补充要求6的高效可视化)
@@ -204,3 +209,21 @@ CREATE TABLE daily_stats
     new_repairs      INT            DEFAULT 0 COMMENT '新增报修数',
     UNIQUE KEY idx_date (stat_date)
 ) COMMENT '每日运营统计表';
+
+-- ==========================================
+-- 6. 公告管理模块
+-- ==========================================
+
+-- 公告表
+CREATE TABLE announcement
+(
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    title        VARCHAR(200) NOT NULL COMMENT '公告标题',
+    content      TEXT         NOT NULL COMMENT '公告内容',
+    user_id      BIGINT       NOT NULL COMMENT '发布人ID',
+    user_name    VARCHAR(100) NOT NULL COMMENT '发布人姓名',
+    publish_time DATETIME COMMENT '发布时间',
+    status       TINYINT      NOT NULL DEFAULT 0 COMMENT '状态: 0-草稿, 1-已发布, 2-已撤销',
+    create_time  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '公告表';

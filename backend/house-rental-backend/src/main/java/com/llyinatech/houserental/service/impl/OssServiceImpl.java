@@ -99,7 +99,7 @@ public class OssServiceImpl implements OssService {
             if (fileUrlOrKey.startsWith("http")) {
                 boolean alreadySigned = fileUrlOrKey.contains("Signature=") && fileUrlOrKey.contains("Expires=");
                 if (alreadySigned) {
-                    return fileUrlOrKey;
+                    return fileUrlOrKey.replace("http://", "https://");
                 }
             }
             String objectKey = fileUrlOrKey.startsWith("http") ? extractFileNameFromUrl(fileUrlOrKey) : fileUrlOrKey;
@@ -112,7 +112,8 @@ public class OssServiceImpl implements OssService {
             if (signed == null) {
                 throw new RuntimeException("生成签名URL失败");
             }
-            return signed.toString();
+            // 强制使用 HTTPS
+            return signed.toString().replace("http://", "https://");
         } catch (Exception e) {
             throw new RuntimeException("生成签名URL失败: " + e.getMessage(), e);
         }

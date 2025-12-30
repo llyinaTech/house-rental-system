@@ -77,8 +77,8 @@ springdoc:
 # 阿里云OSS配置
 aliyun:
   oss:
-    endpoint: oss-cn-guangzhou.aliyuncs.com
-    accessKeyId: LTAI5tD3cAVpK84QKbotLd4V
-    accessKeySecret: IBlcTz8Sm3cOg7C5jNqIgSWjbzvD9G
-    bucketName: llyina
+    endpoint: ${ALIYUN_OSS_ENDPOINT}
+    accessKeyId: ${ALIYUN_OSS_ACCESS_KEY_ID}
+    accessKeySecret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+    bucketName: ${ALIYUN_OSS_BUCKET_NAME}
     

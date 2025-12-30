@@ -8,13 +8,23 @@ import com.llyinatech.houserental.entity.RepairOrder;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.RepairOrderService;
+import com.llyinatech.houserental.service.HouseService;
+import com.llyinatech.houserental.service.UserService;
+import com.llyinatech.houserental.service.OssService;
+import com.llyinatech.houserental.entity.House;
+import com.llyinatech.houserental.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.json.JSONArray;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 房屋报修Controller
@@ -25,6 +35,15 @@ public class RepairOrderController {
 
     @Autowired
     private RepairOrderService repairOrderService;
+
+    @Autowired
+    private HouseService houseService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private OssService ossService;
 
     /**
      * 分页查询报修列表
@@ -58,16 +77,93 @@ public class RepairOrderController {
         }
         wrapper.orderByDesc(RepairOrder::getCreateTime);
         Page<RepairOrder> page = repairOrderService.page(new Page<>(current, size), wrapper);
-        return Result.success(page);
-    }
 
-    /**
-     * 根据ID查询报修
-     */
-    @GetMapping("/{id}")
-    public Result<RepairOrder> getById(@PathVariable Long id) {
-        RepairOrder repairOrder = repairOrderService.getById(id);
-        return Result.success(repairOrder);
+        // Populate names and process images
+        if (page.getRecords() != null && !page.getRecords().isEmpty()) {
+            List<Long> houseIds = page.getRecords().stream().map(RepairOrder::getHouseId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+            List<Long> tenantIds = page.getRecords().stream().map(RepairOrder::getTenantId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+            
+            Map<Long, String> houseMap = new java.util.HashMap<>();
+            if (!houseIds.isEmpty()) {
+                 List<House> houses = houseService.listByIds(houseIds);
+                 if (houses != null) {
+                    houseMap = houses.stream().collect(Collectors.toMap(House::getId, House::getTitle));
+                 }
+            }
+            
+            Map<Long, String> userMap = new java.util.HashMap<>();
+             if (!tenantIds.isEmpty()) {
+                  List<User> users = userService.listByIds(tenantIds);
+                  if (users != null) {
+                     userMap = users.stream().collect(Collectors.toMap(User::getId, u -> StringUtils.hasText(u.getRealName()) ? u.getRealName() : u.getUsername()));
+                  }
+             }
+
+             for (RepairOrder ro : page.getRecords()) {
+                 if (ro.getHouseId() != null) ro.setHouseName(houseMap.get(ro.getHouseId()));
+                 if (ro.getTenantId() != null) ro.setTenantName(userMap.get(ro.getTenantId()));
+                 processRepairImages(ro);
+             }
+         }
+ 
+         return Result.success(page);
+     }
+
+     /**
+      * 根据ID查询报修
+      */
+     @GetMapping("/{id}")
+     public Result<RepairOrder> getById(@PathVariable Long id) {
+         RepairOrder repairOrder = repairOrderService.getById(id);
+         if (repairOrder != null) {
+             if (repairOrder.getHouseId() != null) {
+                 House house = houseService.getById(repairOrder.getHouseId());
+                 if (house != null) repairOrder.setHouseName(house.getTitle());
+             }
+             if (repairOrder.getTenantId() != null) {
+                 User user = userService.getById(repairOrder.getTenantId());
+                 if (user != null) repairOrder.setTenantName(StringUtils.hasText(user.getRealName()) ? user.getRealName() : user.getUsername());
+             }
+             processRepairImages(repairOrder);
+         }
+         return Result.success(repairOrder);
+     }
+
+    private void processRepairImages(RepairOrder ro) {
+        if (ro == null || !StringUtils.hasText(ro.getImages())) {
+            return;
+        }
+        try {
+            String imagesJson = ro.getImages();
+            if (imagesJson.startsWith("\"") && imagesJson.endsWith("\"")) {
+                imagesJson = imagesJson.substring(1, imagesJson.length() - 1).replace("\\\"", "\"");
+            }
+            
+            JSONArray jsonArray = null;
+            try {
+                jsonArray = new JSONArray(imagesJson);
+            } catch (Exception e) {
+                // ignore
+            }
+
+            if (jsonArray != null) {
+                List<String> signedUrls = new ArrayList<>();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    String url = jsonArray.optString(i);
+                    if (StringUtils.hasText(url)) {
+                        try {
+                            String signedUrl = ossService.generateSignedUrl(url, 3600);
+                            signedUrls.add(signedUrl);
+                        } catch (Exception e) {
+                            signedUrls.add(url);
+                        }
+                    }
+                }
+                ro.setImages(new com.google.gson.Gson().toJson(signedUrls));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**

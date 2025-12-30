@@ -69,4 +69,16 @@ public class RepairOrder implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
+
+    /**
+     * 房源名称
+     */
+    @TableField(exist = false)
+    private String houseName;
+
+    /**
+     * 租客姓名
+     */
+    @TableField(exist = false)
+    private String tenantName;
 }

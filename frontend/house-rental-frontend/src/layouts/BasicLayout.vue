@@ -35,7 +35,7 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
           <span class="menu-text" title="仪表盘">仪表盘</span>
         </el-menu-item>
 
-        <el-sub-menu index="system">
+        <el-sub-menu index="system" v-if="auth.user?.role === 'admin'">
           <template #title>
             <span class="menu-icon" aria-hidden="true">
                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm-9 9a9 9 0 1 1 18 0H3z"/></svg>
@@ -48,7 +48,7 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
           <el-menu-item index="/system/logs">日志管理</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="house">
+        <el-sub-menu index="house" v-if="auth.user?.role !== 'tenant'">
           <template #title>
             <span class="menu-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8-1.5 1.3L12 6.2 4.5 12.3 3 11l9-8zm-7 9.5V21h6v-5h2v5h6v-8.5l-7-5.6-7 5.6z"/></svg>
@@ -76,7 +76,7 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
             <span class="menu-text">财务管理</span>
           </template>
           <el-menu-item index="/finance/bills">租金账单</el-menu-item>
-          <el-menu-item index="/finance/stats">数据统计</el-menu-item>
+          <el-menu-item index="/finance/stats" v-if="auth.user?.role !== 'tenant'">数据统计</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="service">

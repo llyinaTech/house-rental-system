@@ -40,17 +40,25 @@
       <el-table v-loading="loading" :data="list" border style="width: 100%">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="periodDesc" label="期数描述" min-width="160" />
-        <el-table-column prop="contractId" label="合同ID" width="100" align="center" />
-        <el-table-column prop="tenantId" label="租客ID" width="100" align="center" />
-        <el-table-column prop="landlordId" label="房东ID" width="100" align="center" />
+        <el-table-column prop="contractNo" label="合同编号" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="tenantName" label="租客姓名" width="120" align="center" />
+        <el-table-column prop="landlordName" label="房东姓名" width="120" align="center" />
         <el-table-column prop="billAmount" label="应缴金额" width="120" align="center" />
-        <el-table-column prop="dueDate" label="到期日期" width="120" align="center" />
+        <el-table-column label="到期日期" width="120" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.dueDate) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="payStatus" label="支付状态" width="110" align="center">
           <template #default="scope">
             <el-tag :type="getStatusTag(scope.row.payStatus)">{{ getStatusLabel(scope.row.payStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="payTime" label="支付时间" width="180" align="center" />
+        <el-table-column label="支付时间" width="180" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.payTime) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="reminderCount" label="提醒次数" width="100" align="center" />
         <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="scope">
@@ -68,8 +76,8 @@
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total"
-          @size-change="handleQuery"
-          @current-change="handleQuery"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
         />
       </div>
     </el-card>
@@ -106,16 +114,16 @@
     <el-drawer v-model="detail.visible" :title="detail.title" size="480px">
       <el-descriptions :column="1" border>
         <el-descriptions-item label="期数描述">{{ detail.data.periodDesc }}</el-descriptions-item>
-        <el-descriptions-item label="合同ID">{{ detail.data.contractId }}</el-descriptions-item>
-        <el-descriptions-item label="租客ID">{{ detail.data.tenantId }}</el-descriptions-item>
-        <el-descriptions-item label="房东ID">{{ detail.data.landlordId }}</el-descriptions-item>
+        <el-descriptions-item label="合同编号">{{ detail.data.contractNo || detail.data.contractId }}</el-descriptions-item>
+        <el-descriptions-item label="租客姓名">{{ detail.data.tenantName || detail.data.tenantId }}</el-descriptions-item>
+        <el-descriptions-item label="房东姓名">{{ detail.data.landlordName || detail.data.landlordId }}</el-descriptions-item>
         <el-descriptions-item label="应缴金额">{{ detail.data.billAmount }}</el-descriptions-item>
-        <el-descriptions-item label="到期日期">{{ detail.data.dueDate }}</el-descriptions-item>
+        <el-descriptions-item label="到期日期">{{ formatDate(detail.data.dueDate) }}</el-descriptions-item>
         <el-descriptions-item label="支付状态">{{ getStatusLabel(detail.data.payStatus) }}</el-descriptions-item>
-        <el-descriptions-item label="支付时间">{{ detail.data.payTime }}</el-descriptions-item>
+        <el-descriptions-item label="支付时间">{{ formatDate(detail.data.payTime) }}</el-descriptions-item>
         <el-descriptions-item label="提醒次数">{{ detail.data.reminderCount }}</el-descriptions-item>
-        <el-descriptions-item label="上次提醒时间">{{ detail.data.lastRemindTime }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ detail.data.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="上次提醒时间">{{ formatDate(detail.data.lastRemindTime) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDate(detail.data.createTime) }}</el-descriptions-item>
       </el-descriptions>
     </el-drawer>
   </div>
@@ -185,6 +193,16 @@ const rules = {
 const getStatusLabel = (s) => ({ 0: '未支付', 1: '已支付', 2: '逾期' }[s] || '未知')
 const getStatusTag = (s) => ({ 0: 'warning', 1: 'success', 2: 'danger' }[s] || 'info')
 
+const formatDate = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 const getList = async () => {
   loading.value = true
   try {
@@ -214,6 +232,17 @@ const getList = async () => {
 }
 
 const handleQuery = () => {
+  queryParams.pageNum = 1
+  getList()
+}
+
+const handlePageChange = (page) => {
+  queryParams.pageNum = page
+  getList()
+}
+
+const handleSizeChange = (size) => {
+  queryParams.pageSize = size
   queryParams.pageNum = 1
   getList()
 }

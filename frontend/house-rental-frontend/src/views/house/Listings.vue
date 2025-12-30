@@ -74,9 +74,14 @@
             <el-tag :type="getAuditTag(scope.row.auditStatus)">{{ getAuditLabel(scope.row.auditStatus) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
+        <el-table-column label="创建时间" width="180" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="scope">
+            <el-button type="primary" link size="small" @click="handleDetail(scope.row)"><el-icon><View /></el-icon> 详情</el-button>
             <el-button type="primary" link size="small" @click="handleEdit(scope.row)"><el-icon><Edit /></el-icon> 编辑</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(scope.row)"><el-icon><Delete /></el-icon> 删除</el-button>
           </template>
@@ -90,8 +95,8 @@
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total"
-          @size-change="handleQuery"
-          @current-change="handleQuery"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
         />
       </div>
     </el-card>
@@ -152,6 +157,27 @@
         <el-form-item label="描述" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="4" placeholder="请输入房源描述" />
         </el-form-item>
+        <el-form-item label="配套设施" prop="featureTags">
+          <el-checkbox-group v-model="form.featureTags">
+            <el-checkbox v-for="tag in featureOptions" :key="tag" :label="tag">{{ tag }}</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="房源图片" prop="images">
+          <el-upload
+            :action="uploadAction"
+            :headers="uploadHeaders"
+            list-type="picture-card"
+            v-model:file-list="form.images"
+            :on-success="handleUploadSuccess"
+            :on-remove="handleRemove"
+            :on-preview="handlePreview"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+          <el-dialog v-model="previewVisible">
+            <img w-full :src="previewImageUrl" alt="Preview Image" style="width: 100%" />
+          </el-dialog>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -164,16 +190,27 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Edit, Delete, View } from '@element-plus/icons-vue'
 import api from '@/api/request'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
+const router = useRouter()
 const loading = ref(false)
 const total = ref(0)
 const list = ref([])
 const regionOptions = ref([])
 const formRef = ref(null)
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${authStore.token}`
+}))
+
+const uploadAction = computed(() => (import.meta.env.VITE_API_BASE_URL || '') + '/api/oss/upload')
+
+const featureOptions = ['WiFi', '空调', '热水器', '洗衣机', '冰箱', '电视', '暖气', '宽带', '沙发', '床', '衣柜', '天然气', '电梯', '车位']
 
 const queryParams = reactive({
   pageNum: 1,
@@ -205,7 +242,9 @@ const form = reactive({
   direction: '',
   rentStatus: 0,
   auditStatus: 0,
-  description: ''
+  description: '',
+  featureTags: [],
+  images: []
 })
 
 const rules = {
@@ -221,6 +260,16 @@ const getRentLabel = (s) => ({ 0: '未租', 1: '已租', 2: '下架' }[s] || '�
 const getRentTag = (s) => ({ 0: 'info', 1: 'success', 2: 'warning' }[s] || 'info')
 const getAuditLabel = (s) => ({ 0: '待审核', 1: '通过', 2: '拒绝' }[s] || '未知')
 const getAuditTag = (s) => ({ 0: 'warning', 1: 'success', 2: 'danger' }[s] || 'info')
+
+const formatDate = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 const getList = async () => {
   loading.value = true
@@ -267,6 +316,17 @@ const handleQuery = () => {
   getList()
 }
 
+const handlePageChange = (page) => {
+  queryParams.pageNum = page
+  getList()
+}
+
+const handleSizeChange = (size) => {
+  queryParams.pageSize = size
+  queryParams.pageNum = 1
+  getList()
+}
+
 const resetQuery = () => {
   queryParams.title = ''
   queryParams.regionId = ''
@@ -283,9 +343,84 @@ const handleAdd = () => {
   dialog.visible = true
 }
 
+const handleDetail = (row) => {
+  router.push({ name: 'ListingDetail', params: { id: row.id } })
+}
+
 const handleEdit = (row) => {
   resetForm()
   Object.assign(form, row)
+  console.log('Editing row:', row)
+  
+  // Parse featureTags
+  try {
+    let tags = []
+    let raw = row.featureTags
+    if (typeof raw === 'string') {
+       try {
+          tags = JSON.parse(raw)
+       } catch (e) {
+          tags = raw.split(',').filter(Boolean)
+       }
+    } else if (Array.isArray(raw)) {
+       tags = raw
+    }
+    // Clean tags
+    if (Array.isArray(tags)) {
+        form.featureTags = tags.map(t => typeof t === 'string' ? t.replace(/^['"`\s]+|['"`\s]+$/g, '') : t)
+    } else {
+        form.featureTags = []
+    }
+  } catch (e) {
+    console.error('Feature parsing error in Edit:', e)
+    form.featureTags = []
+  }
+  
+  // Parse images
+  try {
+    let imgs = []
+    let rawImages = row.images
+    console.log('Raw images in Edit:', rawImages, typeof rawImages)
+
+    // Handle potential double-serialization
+    if (typeof rawImages === 'string' && rawImages.startsWith('"') && rawImages.endsWith('"')) {
+       try { rawImages = JSON.parse(rawImages) } catch (e) {}
+    }
+
+    try {
+      imgs = typeof rawImages === 'string' ? JSON.parse(rawImages) : (Array.isArray(rawImages) ? rawImages : [])
+    } catch (e) {
+      // Fallback manual parsing
+      if (typeof rawImages === 'string') {
+         const content = rawImages.replace(/^\s*\[|\]\s*$/g, '')
+         if (content.trim()) {
+           imgs = content.split(',').map(s => s.trim())
+         }
+      }
+    }
+    
+    // Clean and map
+    if (Array.isArray(imgs)) {
+        form.images = imgs.map(url => {
+           if (typeof url !== 'string') return null
+           // Remove ALL quotes, backticks, spaces, and backslashes
+           let cleanUrl = url.replace(/['"`\s\\]/g, '')
+           cleanUrl = cleanUrl.replace(/^http:\/\//, 'https://')
+           if (!cleanUrl) return null
+           return { 
+             name: cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || 'image', 
+             url: cleanUrl 
+           }
+        }).filter(Boolean)
+    } else {
+        form.images = []
+    }
+
+  } catch (e) {
+    console.error('Error parsing images in Edit:', e)
+    form.images = []
+  }
+
   dialog.title = '编辑房源'
   dialog.visible = true
 }
@@ -310,12 +445,50 @@ const handleDelete = (row) => {
   }).catch(() => {})
 }
 
+const previewVisible = ref(false)
+const previewImageUrl = ref('')
+
+const handleUploadSuccess = (response, uploadFile) => {
+  if (response.success) {
+    uploadFile.url = response.url
+  } else {
+    ElMessage.error(response.message || '上传失败')
+  }
+}
+
+const handleRemove = (uploadFile, uploadFiles) => {
+  // logic to handle remove if needed, el-upload updates file-list automatically
+}
+
+const handlePreview = (uploadFile) => {
+  previewImageUrl.value = uploadFile.url
+  previewVisible.value = true
+}
+
 const submitForm = () => {
   formRef.value.validate(async (valid) => {
     if (!valid) return
+    
+    // Prepare data for submission
+    const submitData = { ...form }
+    submitData.featureTags = JSON.stringify(form.featureTags)
+    
+    // Ensure we extract clean URLs from file objects
+     const cleanImages = form.images.map(f => {
+       let url = f.url || (f.response && f.response.url)
+       if (typeof url === 'string') {
+           // Remove ALL quotes, backticks, spaces, and backslashes
+           let clean = url.replace(/['"`\s\\]/g, '')
+           return clean.replace(/^http:\/\//, 'https://')
+       }
+       return url
+     }).filter(Boolean)
+    
+    submitData.images = JSON.stringify(cleanImages)
+
     try {
       if (form.id) {
-        const res = await api.put('/api/house', form)
+        const res = await api.put('/api/house', submitData)
         if (res?.code === 200) {
           ElMessage.success('修改成功')
         } else {
@@ -323,7 +496,7 @@ const submitForm = () => {
           return
         }
       } else {
-        const res = await api.post('/api/house', form)
+        const res = await api.post('/api/house', submitData)
         if (res?.code === 200) {
           ElMessage.success('新增成功')
         } else {
@@ -373,4 +546,3 @@ onMounted(() => {
 .operation-container { margin-bottom: 16px; }
 .pagination-container { margin-top: 16px; display: flex; justify-content: flex-end; }
 </style>
-

@@ -19,7 +19,8 @@ const routes = [
       { path: 'system/notices', name: 'NoticeManagement', component: () => import('@/views/system/NoticeManagement.vue'), meta: { requiresAuth: true, title: '公告管理' } },
       
       // House Management
-      { path: 'house/list', name: 'HouseInfo', component: () => import('@/views/Listings.vue'), meta: { requiresAuth: true, title: '房源信息' } },
+      { path: 'house/list', name: 'HouseInfo', component: () => import('@/views/house/Listings.vue'), meta: { requiresAuth: true, title: '房源信息' } },
+      { path: 'house/detail/:id', name: 'ListingDetail', component: () => import('@/views/house/ListingDetail.vue'), meta: { requiresAuth: true, title: '房源详情', activeMenu: '/house/list' } },
       
       // Contract Management
       { path: 'contract/list', name: 'ContractList', component: () => import('@/views/contract/ContractList.vue'), meta: { requiresAuth: true, title: '合同列表' } },

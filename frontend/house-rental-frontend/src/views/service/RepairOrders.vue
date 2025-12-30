@@ -56,9 +56,22 @@
         style="width: 100%"
       >
         <el-table-column type="index" label="序号" width="55" align="center" />
-        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="houseId" label="房源ID" width="100" align="center" />
-        <el-table-column prop="tenantId" label="租客ID" width="100" align="center" />
+        <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="houseName" label="房源名称" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="tenantName" label="租客姓名" width="120" align="center" />
+        <el-table-column label="报修图片" width="120" align="center">
+          <template #default="scope">
+             <el-image 
+                v-if="getImages(scope.row).length > 0"
+                style="width: 50px; height: 50px"
+                :src="getImages(scope.row)[0]"
+                :preview-src-list="getImages(scope.row)"
+                fit="cover"
+                preview-teleported
+             />
+             <span v-else>无</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="scope">
             <el-tag :type="getStatusTag(scope.row.status)">
@@ -66,7 +79,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
+        <el-table-column label="创建时间" width="180" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="scope">
             <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
@@ -90,8 +107,8 @@
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total"
-          @size-change="handleQuery"
-          @current-change="handleQuery"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
         />
       </div>
     </el-card>
@@ -107,20 +124,37 @@
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入报修标题" />
         </el-form-item>
-        <el-form-item label="房源ID" prop="houseId">
-          <el-input v-model="form.houseId" placeholder="请输入房源ID" />
+        <el-form-item label="房源名称" prop="houseName">
+          <el-input v-model="form.houseName" placeholder="房源名称" disabled />
         </el-form-item>
-        <el-form-item label="租客ID" prop="tenantId">
-          <el-input v-model="form.tenantId" placeholder="请输入租客ID" />
+        <el-form-item label="租客姓名" prop="tenantName">
+          <el-input v-model="form.tenantName" placeholder="租客姓名" disabled />
         </el-form-item>
         <el-form-item label="详情" prop="content">
           <el-input v-model="form.content" type="textarea" :rows="5" placeholder="请输入报修详情" />
         </el-form-item>
+        <el-form-item label="报修图片" prop="images">
+          <el-upload
+            :action="uploadAction"
+            :headers="uploadHeaders"
+            list-type="picture-card"
+            v-model:file-list="form.images"
+            :on-success="handleUploadSuccess"
+            :on-remove="handleRemove"
+            :on-preview="handlePreview"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+          <el-dialog v-model="previewVisible" append-to-body>
+            <img w-full :src="previewImageUrl" alt="Preview Image" style="width: 100%" />
+          </el-dialog>
+        </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
+          <el-radio-group v-model="form.status" :disabled="authStore.user?.role === 'tenant'">
             <el-radio :label="0">待处理</el-radio>
             <el-radio :label="1">处理中</el-radio>
             <el-radio :label="2">已完结</el-radio>
+            <el-radio :label="3">已取消</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -135,15 +169,23 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, CircleCheck } from '@element-plus/icons-vue'
 import api from '@/api/request'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const loading = ref(false)
 const total = ref(0)
 const list = ref([])
 const formRef = ref(null)
+
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${authStore.token}`
+}))
+
+const uploadAction = computed(() => (import.meta.env.VITE_API_BASE_URL || '') + '/api/oss/upload')
 
 const queryParams = reactive({
   pageNum: 1,
@@ -162,16 +204,72 @@ const form = reactive({
   id: undefined,
   title: '',
   houseId: '',
+  houseName: '',
   tenantId: '',
+  tenantName: '',
   content: '',
-  status: 0
+  status: 0,
+  images: []
 })
 
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  houseId: [{ required: true, message: '请输入房源ID', trigger: 'blur' }],
-  tenantId: [{ required: true, message: '请输入租客ID', trigger: 'blur' }],
   content: [{ required: true, message: '请输入详情', trigger: 'blur' }]
+}
+
+const previewVisible = ref(false)
+const previewImageUrl = ref('')
+
+const handleUploadSuccess = (response, uploadFile) => {
+  if (response.success) {
+    uploadFile.url = response.url
+  } else {
+    ElMessage.error(response.message || '上传失败')
+  }
+}
+
+const handleRemove = (uploadFile, uploadFiles) => {
+}
+
+const handlePreview = (uploadFile) => {
+  previewImageUrl.value = uploadFile.url
+  previewVisible.value = true
+}
+
+const getImages = (row) => {
+  if (!row.images) return []
+  try {
+    let imgs = []
+    let raw = row.images
+    console.log('Raw repair images:', raw)
+    if (typeof raw === 'string') {
+        // Handle double serialization
+        if (raw.startsWith('"') && raw.endsWith('"')) {
+            try { raw = JSON.parse(raw) } catch(e) {}
+        }
+        try {
+            imgs = JSON.parse(raw)
+        } catch(e) {
+            imgs = raw.split(',').filter(Boolean)
+        }
+    } else if (Array.isArray(raw)) {
+        imgs = raw
+    }
+    if (Array.isArray(imgs)) {
+        return imgs.map(url => {
+            if (typeof url === 'string') {
+                // Remove ALL quotes, backticks, spaces, and backslashes
+                let cleanUrl = url.replace(/['"`\s\\]/g, '')
+                // Force HTTPS
+                return cleanUrl.replace(/^http:\/\//, 'https://')
+            }
+            return ''
+        }).filter(url => url && (url.startsWith('http') || url.startsWith('/')))
+    }
+  } catch (e) {
+    console.error('Error parsing repair images:', e)
+  }
+  return []
 }
 
 const toStart = (d) => {
@@ -190,6 +288,16 @@ const getStatusLabel = (s) => {
 const getStatusTag = (s) => {
   const map = { 0: 'warning', 1: 'primary', 2: 'success', 3: 'info' }
   return map[s] || 'info'
+}
+
+const formatDate = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 const getList = async () => {
@@ -224,6 +332,17 @@ const handleQuery = () => {
   getList()
 }
 
+const handlePageChange = (page) => {
+  queryParams.pageNum = page
+  getList()
+}
+
+const handleSizeChange = (size) => {
+  queryParams.pageSize = size
+  queryParams.pageNum = 1
+  getList()
+}
+
 const resetQuery = () => {
   queryParams.title = ''
   queryParams.status = undefined
@@ -243,6 +362,40 @@ const handleEdit = async (row) => {
     const res = await api.get(`/api/repair-order/${row.id}`)
     if (res?.code === 200 && res?.data) {
       Object.assign(form, res.data || {})
+      
+      // Handle images for edit
+      try {
+        let imgs = []
+        let raw = res.data.images
+        if (typeof raw === 'string') {
+            if (raw.startsWith('"') && raw.endsWith('"')) {
+                try { raw = JSON.parse(raw) } catch(e) {}
+            }
+            try {
+                imgs = JSON.parse(raw)
+            } catch(e) {
+                imgs = raw.split(',').filter(Boolean)
+            }
+        } else if (Array.isArray(raw)) {
+            imgs = raw
+        }
+        if (Array.isArray(imgs)) {
+             form.images = imgs.map(url => {
+                 if (typeof url !== 'string') return null
+                 let cleanUrl = url.replace(/['"`\s\\]/g, '')
+                 if (!cleanUrl) return null
+                 return {
+                     name: cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || 'image',
+                     url: cleanUrl
+                 }
+             }).filter(Boolean)
+        } else {
+            form.images = []
+        }
+      } catch (e) {
+        form.images = []
+      }
+
       dialog.title = '编辑报修'
       dialog.visible = true
     } else {
@@ -290,9 +443,21 @@ const handleDelete = (row) => {
 const submitForm = () => {
   formRef.value.validate(async (valid) => {
     if (!valid) return
+    
+    const submitData = { ...form }
+    // Process images
+    const cleanImages = form.images.map(f => {
+       let url = f.url || (f.response && f.response.url)
+       if (typeof url === 'string') {
+           return url.replace(/['"`\s\\]/g, '')
+       }
+       return url
+    }).filter(Boolean)
+    submitData.images = JSON.stringify(cleanImages)
+
     try {
       if (form.id) {
-        const res = await api.put('/api/repair-order', form)
+        const res = await api.put('/api/repair-order', submitData)
         if (res?.code === 200) {
           ElMessage.success('修改成功')
         } else {
@@ -300,7 +465,7 @@ const submitForm = () => {
           return
         }
       } else {
-        const res = await api.post('/api/repair-order', form)
+        const res = await api.post('/api/repair-order', submitData)
         if (res?.code === 200) {
           ElMessage.success('提交成功')
         } else {

@@ -85,7 +85,11 @@
             <el-tag :type="scope.row.status === '成功' ? 'success' : (scope.row.status === '失败' ? 'danger' : 'info')">{{ scope.row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="操作时间" width="180" />
+        <el-table-column label="操作时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="detail" label="详细信息" min-width="150" show-overflow-tooltip />
         <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="scope">
@@ -118,7 +122,7 @@
         <el-descriptions-item label="操作IP">{{ detail.data.ip }}</el-descriptions-item>
         <el-descriptions-item label="状态">{{ detail.data.status }}</el-descriptions-item>
         <el-descriptions-item label="详细信息">{{ detail.data.detail }}</el-descriptions-item>
-        <el-descriptions-item label="操作时间">{{ detail.data.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="操作时间">{{ formatDate(detail.data.createTime) }}</el-descriptions-item>
       </el-descriptions>
     </el-drawer>
   </div>
@@ -152,6 +156,16 @@ const queryParams = reactive({
   action: '',
   dateRange: []
 })
+
+const formatDate = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 const getList = async () => {
   loading.value = true

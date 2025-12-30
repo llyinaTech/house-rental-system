@@ -9,9 +9,12 @@ import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.HouseService;
 import com.llyinatech.houserental.service.RegionService;
+import com.llyinatech.houserental.service.OssService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.json.JSONArray;
+import java.util.ArrayList;
 
 import com.llyinatech.houserental.entity.Region;
 
@@ -29,6 +32,9 @@ public class HouseController {
 
     @Autowired
     private RegionService regionService;
+
+    @Autowired
+    private OssService ossService;
 
     /**
      * 分页查询房源列表
@@ -75,6 +81,12 @@ public class HouseController {
         wrapper.orderByDesc(House::getCreateTime);
         
         Page<House> page = houseService.page(new Page<>(current, size), wrapper);
+        
+        // 处理图片签名
+        if (page.getRecords() != null) {
+            page.getRecords().forEach(this::processHouseImages);
+        }
+        
         return Result.success(page);
     }
 
@@ -84,7 +96,52 @@ public class HouseController {
     @GetMapping("/{id}")
     public Result<House> getById(@PathVariable Long id) {
         House house = houseService.getById(id);
+        processHouseImages(house);
         return Result.success(house);
+    }
+
+    /**
+     * 处理房源图片，生成签名URL
+     */
+    private void processHouseImages(House house) {
+        if (house == null || !StringUtils.hasText(house.getImages())) {
+            return;
+        }
+        try {
+            String imagesJson = house.getImages();
+            // 处理可能的双重序列化
+            if (imagesJson.startsWith("\"") && imagesJson.endsWith("\"")) {
+                imagesJson = imagesJson.substring(1, imagesJson.length() - 1).replace("\\\"", "\"");
+            }
+            
+            JSONArray jsonArray = null;
+            try {
+                jsonArray = new JSONArray(imagesJson);
+            } catch (Exception e) {
+                // ignore parsing error
+            }
+
+            if (jsonArray != null) {
+                List<String> signedUrls = new ArrayList<>();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    String url = jsonArray.optString(i);
+                    if (StringUtils.hasText(url)) {
+                        // 签名有效期 1小时
+                        try {
+                            String signedUrl = ossService.generateSignedUrl(url, 3600);
+                            signedUrls.add(signedUrl);
+                        } catch (Exception e) {
+                            signedUrls.add(url); // 签名失败则保留原URL
+                        }
+                    }
+                }
+                // 使用 Gson 重新序列化
+                house.setImages(new com.google.gson.Gson().toJson(signedUrls));
+            }
+        } catch (Exception e) {
+            // 仅打印日志，不影响主流程
+            e.printStackTrace();
+        }
     }
 
     /**

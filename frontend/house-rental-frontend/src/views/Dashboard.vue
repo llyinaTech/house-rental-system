@@ -27,8 +27,8 @@
             <el-table-column prop="title" show-overflow-tooltip></el-table-column>
             <el-table-column prop="date" width="120" align="right"></el-table-column>
             <el-table-column width="80" align="center">
-              <template #default>
-                <el-button type="primary" link>处理</el-button>
+              <template #default="scope">
+                <el-button type="primary" link @click="handleTodo(scope.row)">处理</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -44,16 +44,16 @@
             </div>
           </template>
           <div class="notice-list">
-            <el-timeline v-if="noticeList.length">
-              <el-timeline-item
-                v-for="notice in noticeList"
-                :key="notice.id"
-                :timestamp="notice.createTime"
-                placement="top"
-                type="primary"
-                :hollow="true"
-              >
-                <div class="notice-item-content" @click="showNotice(notice)">
+              <el-timeline v-if="noticeList.length">
+                <el-timeline-item
+                  v-for="notice in noticeList"
+                  :key="notice.id"
+                  :timestamp="formatDate(notice.createTime)"
+                  placement="top"
+                  type="primary"
+                  :hollow="true"
+                >
+                  <div class="notice-item-content" @click="showNotice(notice)">
                   <span class="notice-title">{{ notice.title }}</span>
                 </div>
               </el-timeline-item>
@@ -73,7 +73,7 @@
       <div class="notice-content" v-html="currentNotice.content"></div>
       <template #footer>
         <span class="dialog-footer">
-          <span class="notice-meta">发布于: {{ currentNotice.createTime }}</span>
+          <span class="notice-meta">发布于: {{ formatDate(currentNotice.createTime) }}</span>
           <el-button @click="dialogVisible = false">关闭</el-button>
         </span>
       </template>
@@ -83,29 +83,135 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { List, Bell } from '@element-plus/icons-vue'
 import api from '@/api/request'
 import dayjs from 'dayjs'
 
+const router = useRouter()
 const auth = useAuthStore()
 const currentDate = dayjs().format('YYYY年MM月DD日 dddd')
 
 const noticeList = ref([])
 const dialogVisible = ref(false)
 const currentNotice = reactive({})
+const todoItems = ref([])
 
-// 待办事项模拟数据
-const todoItems = reactive([
-  { type: '报修', title: '201室水管漏水维修申请', date: '2023-10-15' },
-  { type: '合同', title: '102室租约即将到期', date: '2023-10-18' },
-  { type: '租金', title: '305室租金逾期提醒', date: '2023-10-20' },
-  { type: '审批', title: '新用户注册待审核', date: '2023-10-22' }
-])
+const formatDate = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 const getTodoTagType = (type) => {
-  const map = { '报修': 'danger', '合同': 'warning', '租金': 'success', '审批': 'primary' }
+  const map = { '报修': 'danger', '合同': 'warning', '租金': 'success', '审批': 'primary', '房源': 'info' }
   return map[type] || 'info'
+}
+
+const loadTodos = async () => {
+  todoItems.value = []
+  const role = auth.user?.role
+  
+  // 1. 管理员: 待审核房源
+  if (role === 'admin') {
+     try {
+       const res = await api.get('/api/house/page', { params: { current: 1, size: 5, auditStatus: 0 } })
+       if (res?.code === 200 && res?.data?.records) {
+         res.data.records.forEach(item => {
+           todoItems.value.push({
+             type: '房源',
+             title: `房源 "${item.title}" 待审核`,
+             date: formatDate(item.createTime),
+             path: '/house/list',
+             id: item.id
+           })
+         })
+       }
+     } catch {}
+  }
+  
+  // 2. 房东: 待处理报修 + 合同到期 + 逾期账单
+  if (role === 'landlord') {
+     // 报修
+     try {
+       const res = await api.get('/api/repair-order/page', { params: { current: 1, size: 5, status: 0 } })
+       if (res?.code === 200 && res?.data?.records) {
+         res.data.records.forEach(item => {
+           todoItems.value.push({
+             type: '报修',
+             title: `报修 "${item.title}" 待处理`,
+             date: formatDate(item.createTime),
+             path: '/service/repairs'
+           })
+         })
+       }
+     } catch {}
+     // 合同 (即将到期 logic would need backend support, skipping for now or use simplified logic)
+     
+     // 账单 (逾期)
+     try {
+       const res = await api.get('/api/rent-bill/page', { params: { current: 1, size: 5, payStatus: 2 } })
+       if (res?.code === 200 && res?.data?.records) {
+         res.data.records.forEach(item => {
+           todoItems.value.push({
+             type: '租金',
+             title: `账单 "${item.billNo}" 已逾期`,
+             date: formatDate(item.endDate),
+             path: '/finance/bills'
+           })
+         })
+       }
+     } catch {}
+  }
+
+  // 3. 租客: 待支付租金 + 合同到期
+  if (role === 'tenant') {
+     // 账单 (待支付)
+     try {
+       const res = await api.get('/api/rent-bill/page', { params: { current: 1, size: 5, payStatus: 0 } })
+       if (res?.code === 200 && res?.data?.records) {
+         res.data.records.forEach(item => {
+           todoItems.value.push({
+             type: '租金',
+             title: `账单 "${item.billNo}" 待支付`,
+             date: formatDate(item.endDate),
+             path: '/finance/bills'
+           })
+         })
+       }
+     } catch {}
+     
+     // 合同 (Check status=1 for active, visually filtering near expiry if possible, else just list active)
+     try {
+        const res = await api.get('/api/lease-contract/page', { params: { current: 1, size: 5, status: 1 } }) // Only active
+        if (res?.code === 200 && res?.data?.records) {
+           const now = new Date()
+           const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+           res.data.records.forEach(item => {
+             const endDate = new Date(item.endDate)
+             if (endDate <= thirtyDaysLater && endDate >= now) {
+                todoItems.value.push({
+                   type: '合同',
+                   title: `合同 "${item.contractNo}" 即将到期`,
+                   date: formatDate(item.endDate),
+                   path: '/contract/list' // Assuming tenant view
+                })
+             }
+           })
+        }
+     } catch {}
+  }
+}
+
+const handleTodo = (row) => {
+  if (row.path) {
+    router.push(row.path)
+  }
 }
 
 const getNotices = async () => {
@@ -129,6 +235,7 @@ const showNotice = (notice) => {
 
 onMounted(() => {
   getNotices()
+  loadTodos()
 })
 </script>
 

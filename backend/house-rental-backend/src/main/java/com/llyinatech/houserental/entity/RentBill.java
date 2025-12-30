@@ -76,4 +76,22 @@ public class RentBill implements Serializable {
      * 创建时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 合同编号
+     */
+    @TableField(exist = false)
+    private String contractNo;
+
+    /**
+     * 租客姓名
+     */
+    @TableField(exist = false)
+    private String tenantName;
+
+    /**
+     * 房东姓名
+     */
+    @TableField(exist = false)
+    private String landlordName;
 }

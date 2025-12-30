@@ -72,7 +72,11 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="创建时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="scope">
             <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
@@ -93,8 +97,8 @@
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total"
-          @size-change="handleQuery"
-          @current-change="handleQuery"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
         />
       </div>
     </el-card>
@@ -198,6 +202,16 @@ const rules = {
   ]
 }
 
+const formatDate = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 // 获取列表数据
 const getList = async () => {
   loading.value = true
@@ -236,6 +250,17 @@ const getUserTypeTag = (type) => {
 }
 
 const handleQuery = () => {
+  queryParams.pageNum = 1
+  getList()
+}
+
+const handlePageChange = (page) => {
+  queryParams.pageNum = page
+  getList()
+}
+
+const handleSizeChange = (size) => {
+  queryParams.pageSize = size
   queryParams.pageNum = 1
   getList()
 }

@@ -69,9 +69,21 @@
             {{ getUserName(scope.row.tenantId) }}
           </template>
         </el-table-column>
-        <el-table-column prop="startDate" label="生效日期" width="120" align="center" />
-        <el-table-column prop="endDate" label="到期日期" width="120" align="center" />
-        <el-table-column prop="signDate" label="签署日期" width="120" align="center" />
+        <el-table-column label="生效日期" width="120" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.startDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="到期日期" width="120" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.endDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="签署日期" width="120" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.signDate) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="rentAmount" label="月租金" width="110" align="center" />
         <el-table-column prop="depositAmount" label="押金" width="110" align="center" />
         <el-table-column prop="payPeriod" label="支付周期" width="100" align="center">
@@ -84,7 +96,11 @@
             <el-tag :type="getStatusTag(scope.row.status)">{{ getStatusLabel(scope.row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
+        <el-table-column label="创建时间" width="180" align="center">
+          <template #default="scope">
+            {{ formatDate(scope.row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="合同文件" width="120" align="center">
           <template #default="scope">
             <el-button type="primary" link size="small" :disabled="!scope.row.contractFileUrl" @click="previewFile(scope.row.contractFileUrl)">预览</el-button>
@@ -105,8 +121,8 @@
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total"
-          @size-change="handleQuery"
-          @current-change="handleQuery"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
         />
       </div>
     </el-card>
@@ -295,18 +311,30 @@ const getPayPeriodLabel = (p) => ({ 1: '月付', 3: '季付' }[p] || '未知')
 const getUserLabel = (u) => (u?.realName && u.realName.trim() ? u.realName : u?.username || '')
 const getHouseName = (id) => {
   if (!id) return ''
-  const h = houseOptions.value.find((x) => Number(x.id) === Number(id))
+  // Ensure types match for comparison
+  const h = houseOptions.value.find((x) => String(x.id) === String(id))
   return h ? h.title : id
 }
 const getUserName = (id) => {
   if (!id) return ''
-  const u = userOptions.value.find((x) => Number(x.id) === Number(id))
+  // Ensure types match for comparison
+  const u = userOptions.value.find((x) => String(x.id) === String(id))
   return u ? getUserLabel(u) : id
+}
+
+const formatDate = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 const loadHouseOptions = async () => {
   try {
-    const res = await api.get('/api/house/page', { params: { current: 1, size: 1000 } })
+    const res = await api.get('/api/house/page', { params: { current: 1, size: 2000 } })
     if (res?.code === 200 && res?.data?.records) {
       houseOptions.value = res.data.records
     }
@@ -315,7 +343,7 @@ const loadHouseOptions = async () => {
 
 const loadUserOptions = async () => {
   try {
-    const res = await api.get('/api/user/page', { params: { current: 1, size: 1000 } })
+    const res = await api.get('/api/user/page', { params: { current: 1, size: 2000 } })
     if (res?.code === 200 && res?.data?.records) {
       userOptions.value = res.data.records
     }
@@ -353,6 +381,17 @@ const getList = async () => {
 }
 
 const handleQuery = () => {
+  queryParams.pageNum = 1
+  getList()
+}
+
+const handlePageChange = (page) => {
+  queryParams.pageNum = page
+  getList()
+}
+
+const handleSizeChange = (size) => {
+  queryParams.pageSize = size
   queryParams.pageNum = 1
   getList()
 }

@@ -68,14 +68,14 @@ const handleLogin = async () => {
         password: loginForm.password,
       })
       if (res?.code === 200 && res?.data) {
-        const { token, id, username, roles } = res.data
+        const { token, id, username, roles, permissions } = res.data
         auth.setToken(token)
         auth.setUser({
           id,
           username,
           role: Array.isArray(roles) && roles.length ? roles[0] : '',
           roles: Array.isArray(roles) ? roles : [],
-        })
+        }, permissions || [])
         ElMessage.success('登录成功')
         router.push('/dashboard')
       } else {

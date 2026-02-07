@@ -12,7 +12,10 @@ spring:
     time-zone: GMT+8
     serialization:
       write-dates-as-timestamps: false
-
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 server:
   port: 8081
 
@@ -36,8 +39,8 @@ logging:
     root: INFO
     com.llyinatech.houserental: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n"
+    file: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} [%thread] %-5level %clr(%logger{36}){cyan} - %msg%n"
   file:
     name: logs/house-rental-backend.log
     max-size: 10MB

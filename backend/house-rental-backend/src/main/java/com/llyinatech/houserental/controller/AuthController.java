@@ -72,19 +72,16 @@ public class AuthController {
             // 生成JWT令牌
             String jwt = jwtUtil.generateToken(userDetails);
 
-            // 获取角色列表
-            List<String> roles = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .map(role -> role.replace("ROLE_", ""))
-                    .collect(Collectors.toList());
+            List<String> roles = userDetails.getRoles();
+            List<String> permissions = userDetails.getPermissions();
 
-            // 构建响应
             LoginResponse response = new LoginResponse(
                     jwt,
                     userDetails.getId(),
                     userDetails.getUsername(),
                     null, // realName可以从User实体中获取
-                    roles
+                    roles,
+                    permissions
             );
 
             return Result.success(response);

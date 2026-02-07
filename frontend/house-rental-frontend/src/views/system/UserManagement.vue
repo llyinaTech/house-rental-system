@@ -38,7 +38,7 @@
 
     <!-- 操作栏 -->
     <div class="operation-container">
-      <el-button type="primary" @click="handleAdd">
+      <el-button type="primary" @click="handleAdd" v-hasPerm="['system:user:add']">
         <el-icon><Plus /></el-icon> 新增用户
       </el-button>
     </div>
@@ -79,10 +79,13 @@
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="scope">
-            <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
+            <el-button type="primary" link size="small" @click="handleEdit(scope.row)" v-hasPerm="['system:user:edit']">
               <el-icon><Edit /></el-icon> 编辑
             </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(scope.row)">
+            <el-button type="primary" link size="small" @click="handleRoleAssign(scope.row)" v-hasPerm="['system:user:edit']">
+              <el-icon><CircleCheck /></el-icon> 分配角色
+            </el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(scope.row)" v-hasPerm="['system:user:remove']">
               <el-icon><Delete /></el-icon> 删除
             </el-button>
           </template>
@@ -147,19 +150,56 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 角色分配弹窗 -->
+    <el-dialog
+      title="分配角色"
+      v-model="roleDialog.visible"
+      width="500px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="用户名">
+          <el-input v-model="roleDialog.username" disabled />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="userRoleIds" multiple placeholder="请选择角色" style="width: 100%">
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="roleDialog.visible = false">取 消</el-button>
+          <el-button type="primary" @click="submitRoleAssign">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Edit, Delete, CircleCheck } from '@element-plus/icons-vue'
 import api from '@/api/request'
 
 const loading = ref(false)
 const total = ref(0)
 const userList = ref([])
 const userFormRef = ref(null)
+
+const roleDialog = reactive({
+  visible: false,
+  userId: null,
+  username: ''
+})
+const roleList = ref([])
+const userRoleIds = ref([])
 
 const queryParams = reactive({
   pageNum: 1,
@@ -319,6 +359,45 @@ const handleStatusChange = (row) => {
     .catch((e) => {
       ElMessage.error(e?.response?.data?.message || e.message || '状态更新失败')
     })
+}
+
+const handleRoleAssign = async (row) => {
+  roleDialog.userId = row.id
+  roleDialog.username = row.username
+  roleDialog.visible = true
+  userRoleIds.value = []
+  
+  try {
+    // 并行获取角色列表和用户角色
+    const [roleRes, userRoleRes] = await Promise.all([
+      api.get('/api/role/list'),
+      api.get(`/api/user/${row.id}/roles`)
+    ])
+    
+    if (roleRes.code === 200) {
+      roleList.value = roleRes.data
+    }
+    
+    if (userRoleRes.code === 200) {
+      userRoleIds.value = userRoleRes.data
+    }
+  } catch (e) {
+    ElMessage.error('获取角色数据失败')
+  }
+}
+
+const submitRoleAssign = async () => {
+  try {
+    const res = await api.post(`/api/user/${roleDialog.userId}/roles`, userRoleIds.value)
+    if (res.code === 200) {
+      ElMessage.success('角色分配成功')
+      roleDialog.visible = false
+    } else {
+      ElMessage.error(res.message || '分配失败')
+    }
+  } catch (e) {
+    ElMessage.error(e.message || '分配失败')
+  }
 }
 
 const submitForm = () => {

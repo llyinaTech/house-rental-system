@@ -2,9 +2,9 @@
 DROP DATABASE IF EXISTS house_rental;
 -- 创建数据库
 CREATE
-DATABASE IF NOT EXISTS house_rental DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    DATABASE IF NOT EXISTS house_rental DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE
-house_rental;
+    house_rental;
 
 -- ==========================================
 -- 1. 权限与用户模块 (RBAC)
@@ -43,6 +43,29 @@ CREATE TABLE sys_user_role
     PRIMARY KEY (user_id, role_id)
 ) COMMENT '用户角色关联表';
 
+-- 角色权限关联表
+CREATE TABLE sys_role_permission
+(
+    role_id BIGINT NOT NULL,
+    perm_id BIGINT NOT NULL,
+    PRIMARY KEY (role_id, perm_id)
+) COMMENT '角色权限关联表';
+-- 权限表
+CREATE TABLE sys_permission
+(
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    parent_id  BIGINT  DEFAULT 0 COMMENT '父权限ID(用于菜单树)',
+    perm_name  VARCHAR(100) NOT NULL COMMENT '权限名称(菜单/按钮展示用)',
+    perm_key   VARCHAR(100) NOT NULL UNIQUE COMMENT '权限标识, 如 house:list',
+    type       TINYINT      NOT NULL COMMENT '类型: 1-目录, 2-菜单, 3-按钮/接口',
+    path       VARCHAR(255) COMMENT '前端路由路径(菜单型权限使用)',
+    component  VARCHAR(255) COMMENT '前端组件路径(可选)',
+    method     VARCHAR(10) COMMENT '请求方法: GET/POST/PUT/DELETE(接口型用)',
+    sort_order INT     DEFAULT 0 COMMENT '排序',
+    visible    TINYINT DEFAULT 1 COMMENT '是否可见: 1-显示, 0-隐藏',
+    status     TINYINT DEFAULT 1 COMMENT '状态: 1-正常, 0-禁用'
+) COMMENT '权限/菜单表';
+
 -- ==========================================
 -- 2. 房源管理模块 (分层检索与展示)
 -- ==========================================
@@ -56,7 +79,6 @@ CREATE TABLE sys_region
     level_type TINYINT COMMENT '层级: 1-省/市, 2-区, 3-街道/商圈',
     sort_order INT    DEFAULT 0 COMMENT '排序'
 ) COMMENT '区域商圈表';
-
 -- 房源表
 CREATE TABLE house_info
 (
@@ -89,9 +111,9 @@ CREATE TABLE house_info
     view_count   INT      DEFAULT 0 COMMENT '浏览量',
 
     create_time  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX        idx_price (price),
-    INDEX        idx_region (region_id),
-    INDEX        idx_room (room_num)
+    INDEX idx_price (price),
+    INDEX idx_region (region_id),
+    INDEX idx_room (room_num)
 ) COMMENT '房源信息表';
 
 -- ==========================================
@@ -155,7 +177,7 @@ CREATE TABLE rent_bill
     last_remind_time DATETIME COMMENT '上次提醒时间',
 
     create_time      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX            idx_due_status (due_date, pay_status) -- 优化定时任务查询
+    INDEX idx_due_status (due_date, pay_status) -- 优化定时任务查询
 ) COMMENT '租金账单提醒表';
 
 -- ==========================================
@@ -224,6 +246,6 @@ CREATE TABLE announcement
     user_name    VARCHAR(100) NOT NULL COMMENT '发布人姓名',
     publish_time DATETIME COMMENT '发布时间',
     status       TINYINT      NOT NULL DEFAULT 0 COMMENT '状态: 0-草稿, 1-已发布, 2-已撤销',
-    create_time  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+    create_time  DATETIME              DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time  DATETIME              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) COMMENT '公告表';

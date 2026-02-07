@@ -15,6 +15,8 @@ const routes = [
       // System Management
       { path: 'system/users', name: 'UserManagement', component: () => import('@/views/system/UserManagement.vue'), meta: { requiresAuth: true, title: '用户管理' } },
       { path: 'system/roles', name: 'RoleManagement', component: () => import('@/views/system/RoleManagement.vue'), meta: { requiresAuth: true, title: '角色管理' } },
+      { path: 'system/permissions', name: 'PermissionManagement', component: () => import('@/views/system/PermissionManagement.vue'), meta: { requiresAuth: true, title: '权限管理' } },
+      { path: 'system/dict', name: 'DictManagement', component: () => import('@/views/system/DictManagement.vue'), meta: { requiresAuth: true, title: '字典管理' } },
       { path: 'system/logs', name: 'LogManagement', component: () => import('@/views/system/LogManagement.vue'), meta: { requiresAuth: true, title: '日志管理' } },
       { path: 'system/notices', name: 'NoticeManagement', component: () => import('@/views/system/NoticeManagement.vue'), meta: { requiresAuth: true, title: '公告管理' } },
       

@@ -2,6 +2,7 @@ package com.llyinatech.houserental.security;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.llyinatech.houserental.entity.User;
+import com.llyinatech.houserental.mapper.PermissionMapper;
 import com.llyinatech.houserental.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,6 +20,7 @@ import java.util.List;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserMapper userMapper;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -33,8 +35,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         // 查询用户角色
         List<String> roles = userMapper.selectRoleKeysByUserId(user.getId());
+        List<String> permissions = permissionMapper.selectPermKeysByUserId(user.getId());
 
-        // 构建UserDetails对象
-        return UserDetailsImpl.build(user, roles);
+        return UserDetailsImpl.build(user, roles, permissions);
     }
 }

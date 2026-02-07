@@ -52,11 +52,18 @@ public class LoginResponse {
     @Schema(description = "角色列表", example = "[\"admin\"]")
     private List<String> roles;
 
-    public LoginResponse(String token, Long id, String username, String realName, List<String> roles) {
+    /**
+     * 权限列表
+     */
+    @Schema(description = "权限列表", example = "[\"house:list\",\"rentbill:export\"]")
+    private List<String> permissions;
+
+    public LoginResponse(String token, Long id, String username, String realName, List<String> roles, List<String> permissions) {
         this.token = token;
         this.id = id;
         this.username = username;
         this.realName = realName;
         this.roles = roles;
+        this.permissions = permissions;
     }
 }

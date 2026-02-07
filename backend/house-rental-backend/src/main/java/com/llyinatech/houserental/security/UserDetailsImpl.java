@@ -25,24 +25,31 @@ public class UserDetailsImpl implements UserDetails {
     private String password;
     private Integer status;
     private List<String> roles;
+    private List<String> permissions;
 
     /**
      * 根据User实体构建UserDetailsImpl
      */
-    public static UserDetailsImpl build(User user, List<String> roles) {
+    public static UserDetailsImpl build(User user, List<String> roles, List<String> permissions) {
         return new UserDetailsImpl(
                 user.getId(),
                 user.getUsername(),
                 user.getPassword(),
                 user.getStatus(),
-                roles
+                roles,
+                permissions
         );
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
+        List<GrantedAuthority> roleAuthorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .collect(Collectors.toList());
+        List<GrantedAuthority> permAuthorities = permissions == null ? List.of() : permissions.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+        return java.util.stream.Stream.concat(roleAuthorities.stream(), permAuthorities.stream())
                 .collect(Collectors.toList());
     }
 

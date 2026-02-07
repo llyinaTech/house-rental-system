@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -11,6 +11,14 @@ const isCollapse = ref(false)
 const asideWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
 const toggleAside = () => { isCollapse.value = !isCollapse.value }
 const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
+
+const menus = computed(() => auth.menus)
+
+onMounted(() => {
+  if (isLoggedIn.value) {
+    auth.fetchMenus()
+  }
+})
 </script>
 
 <template>
@@ -28,6 +36,7 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
         text-color="#fff"
         active-text-color="#409EFF"
         :collapse="isCollapse">
+        
         <el-menu-item index="/dashboard">
           <span class="menu-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm10 0h8v6h-8V3zM3 13h6v8H3v-8zm8 6h10v-8H11v8z"/></svg>
@@ -35,59 +44,34 @@ const onLogout = () => { auth.logout(); router.replace({ name: 'Login' }) }
           <span class="menu-text" title="仪表盘">仪表盘</span>
         </el-menu-item>
 
-        <el-sub-menu index="system" v-if="auth.user?.role === 'admin'">
-          <template #title>
-            <span class="menu-icon" aria-hidden="true">
-               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm-9 9a9 9 0 1 1 18 0H3z"/></svg>
+        <!-- 动态菜单渲染 -->
+        <template v-for="menu in menus" :key="menu.id">
+          <!-- 有子菜单 (目录) -->
+          <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="String(menu.id)">
+            <template #title>
+              <span class="menu-icon" v-if="menu.icon" aria-hidden="true">
+                <!-- 这里简单处理，如果有icon字段可以渲染图标，暂且用默认图标或根据名字判断 -->
+                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+              </span>
+              <span class="menu-text">{{ menu.permName }}</span>
+            </template>
+            <!-- 二级菜单 -->
+            <template v-for="child in menu.children" :key="child.id">
+              <el-menu-item :index="'/' + menu.path + '/' + child.path">
+                {{ child.permName }}
+              </el-menu-item>
+            </template>
+          </el-sub-menu>
+          
+          <!-- 无子菜单 (一级菜单) -->
+          <el-menu-item v-else :index="'/' + menu.path">
+            <span class="menu-icon" v-if="menu.icon" aria-hidden="true">
+               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
             </span>
-            <span class="menu-text">系统管理</span>
-          </template>
-          <el-menu-item index="/system/users">用户管理</el-menu-item>
-          <el-menu-item index="/system/roles">角色管理</el-menu-item>
-          <el-menu-item index="/system/notices">公告管理</el-menu-item>
-          <el-menu-item index="/system/logs">日志管理</el-menu-item>
-        </el-sub-menu>
+            <span class="menu-text">{{ menu.permName }}</span>
+          </el-menu-item>
+        </template>
 
-        <el-sub-menu index="house" v-if="auth.user?.role !== 'tenant'">
-          <template #title>
-            <span class="menu-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8-1.5 1.3L12 6.2 4.5 12.3 3 11l9-8zm-7 9.5V21h6v-5h2v5h6v-8.5l-7-5.6-7 5.6z"/></svg>
-            </span>
-            <span class="menu-text">房源管理</span>
-          </template>
-          <el-menu-item index="/house/list">房源信息</el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="contract">
-          <template #title>
-            <span class="menu-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 2v5h5"/><path d="M8 10h8M8 14h8M8 18h6"/></svg>
-            </span>
-            <span class="menu-text">合同管理</span>
-          </template>
-          <el-menu-item index="/contract/list">合同列表</el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="finance">
-          <template #title>
-            <span class="menu-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v4H3V5zm0 6h18v8H3v-8zm2 2v4h6v-4H5z"/></svg>
-            </span>
-            <span class="menu-text">财务管理</span>
-          </template>
-          <el-menu-item index="/finance/bills">租金账单</el-menu-item>
-          <el-menu-item index="/finance/stats" v-if="auth.user?.role !== 'tenant'">数据统计</el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="service">
-          <template #title>
-            <span class="menu-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7l-4 4-2-2 4-4a3 3 0 1 0-4.24-4.24l-4 4L8 3 4 7l4 4-7 7 3 3 7-7 4 4 4-4-2-2 4-4z"/></svg>
-            </span>
-            <span class="menu-text">服务管理</span>
-          </template>
-          <el-menu-item index="/service/repairs">报修工单</el-menu-item>
-        </el-sub-menu>
       </el-menu>
     </el-aside>
 

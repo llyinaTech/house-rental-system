@@ -1,8 +1,11 @@
 package com.llyinatech.houserental.enums;
 
+import lombok.Getter;
+
 /**
  * 操作类型枚举
  */
+@Getter
 public enum ActionEnum {
     ADD("新增"),
     MODIFY("修改"),
@@ -21,7 +24,4 @@ public enum ActionEnum {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

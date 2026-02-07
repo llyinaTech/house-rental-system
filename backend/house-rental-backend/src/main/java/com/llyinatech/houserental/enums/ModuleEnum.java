@@ -12,7 +12,8 @@ public enum ModuleEnum {
     SYSTEM_LOGIN("系统登录"),
     SYSTEM_LOG("系统日志"),
     REPAIR_ORDER("报修管理"),
-    ANNOUNCEMENT_MANAGEMENT("公告管理");
+    ANNOUNCEMENT_MANAGEMENT("公告管理"),
+    PERMISSION_MANAGEMENT("权限管理");
 
     private final String value;
 

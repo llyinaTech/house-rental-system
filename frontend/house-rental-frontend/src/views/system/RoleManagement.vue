@@ -102,6 +102,31 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 分配权限弹窗 -->
+    <el-dialog title="分配权限" v-model="permDialog.visible" width="500px">
+      <el-form label-width="80px">
+        <el-form-item label="角色名称">
+          <el-input v-model="form.roleName" disabled />
+        </el-form-item>
+        <el-form-item label="权限">
+          <el-tree
+            ref="permTreeRef"
+            :data="permissionTree"
+            :props="{ label: 'permName', children: 'children' }"
+            show-checkbox
+            node-key="id"
+            default-expand-all
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="permDialog.visible = false">取 消</el-button>
+          <el-button type="primary" @click="submitPermission">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -115,6 +140,13 @@ const loading = ref(false)
 const total = ref(0)
 const roleList = ref([])
 const roleFormRef = ref(null)
+
+const permDialog = reactive({
+  visible: false,
+  roleId: null
+})
+const permissionTree = ref([])
+const permTreeRef = ref(null)
 
 const queryParams = reactive({
   pageNum: 1,
@@ -169,8 +201,72 @@ const handleEdit = (row) => {
   dialog.visible = true
 }
 
-const handleMenuScope = (row) => {
-  ElMessage.info('权限分配功能开发中...')
+const handleMenuScope = async (row) => {
+  form.roleName = row.roleName
+  permDialog.roleId = row.id
+  permDialog.visible = true
+  
+  // Load permission tree
+  try {
+    const treeRes = await api.get('/api/permission/tree')
+    if (treeRes.code === 200) {
+      permissionTree.value = treeRes.data
+    }
+    
+    // Load role permissions
+    const permRes = await api.get(`/api/role/${row.id}/permissions`)
+    if (permRes.code === 200) {
+      // Wait for tree to render then set keys
+      setTimeout(() => {
+        if (permTreeRef.value) {
+          // Filter only leaf nodes to avoid auto-selecting all children of a parent
+          const leafKeys = filterLeafKeys(permRes.data, permissionTree.value)
+          permTreeRef.value.setCheckedKeys(leafKeys)
+        }
+      }, 100)
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+// Helper to find leaf nodes
+const filterLeafKeys = (allKeys, treeData) => {
+  const leafKeys = []
+  const keySet = new Set(allKeys)
+  
+  const traverse = (nodes) => {
+    for (const node of nodes) {
+      if (node.children && node.children.length > 0) {
+        traverse(node.children)
+      } else {
+        if (keySet.has(node.id)) {
+          leafKeys.push(node.id)
+        }
+      }
+    }
+  }
+  
+  traverse(treeData)
+  return leafKeys
+}
+
+const submitPermission = async () => {
+  const checkedKeys = permTreeRef.value.getCheckedKeys()
+  const halfCheckedKeys = permTreeRef.value.getHalfCheckedKeys()
+  const allKeys = [...checkedKeys, ...halfCheckedKeys]
+  
+  try {
+    const res = await api.post(`/api/role/${permDialog.roleId}/permissions`, allKeys)
+    if (res.code === 200) {
+      ElMessage.success('分配成功')
+      permDialog.visible = false
+    } else {
+      ElMessage.error(res.message)
+    }
+  } catch (e) {
+    ElMessage.error(e.message || '分配失败')
+  }
 }
 
 const handleDelete = (row) => {

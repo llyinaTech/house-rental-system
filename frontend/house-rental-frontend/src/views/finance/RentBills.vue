@@ -2,8 +2,8 @@
   <div class="app-container">
     <el-card class="filter-container" shadow="never">
       <el-form :inline="true" :model="queryParams" ref="queryForm">
-        <el-form-item label="租客ID" prop="tenantId">
-          <el-input v-model="queryParams.tenantId" placeholder="租客ID" clearable @keyup.enter="handleQuery" />
+        <el-form-item label="租客姓名" prop="tenantName">
+          <el-input v-model="queryParams.tenantName" placeholder="租客姓名" clearable @keyup.enter="handleQuery" />
         </el-form-item>
         <el-form-item label="合同ID" prop="contractId">
           <el-input v-model="queryParams.contractId" placeholder="合同ID" clearable @keyup.enter="handleQuery" />
@@ -143,7 +143,7 @@ const formRef = ref(null)
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
-  tenantId: '',
+  tenantName: '',
   contractId: '',
   payStatus: undefined,
   dueRange: []
@@ -210,7 +210,7 @@ const getList = async () => {
       params: {
         current: queryParams.pageNum,
         size: queryParams.pageSize,
-        tenantId: queryParams.tenantId || undefined,
+        tenantName: queryParams.tenantName || undefined,
         contractId: queryParams.contractId || undefined,
         payStatus: queryParams.payStatus,
         dueDateBegin: Array.isArray(queryParams.dueRange) && queryParams.dueRange[0] ? queryParams.dueRange[0] : undefined,
@@ -248,7 +248,7 @@ const handleSizeChange = (size) => {
 }
 
 const resetQuery = () => {
-  queryParams.tenantId = ''
+  queryParams.tenantName = ''
   queryParams.contractId = ''
   queryParams.payStatus = undefined
   queryParams.dueRange = []

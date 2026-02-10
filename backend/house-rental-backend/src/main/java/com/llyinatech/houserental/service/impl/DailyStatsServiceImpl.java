@@ -1,7 +1,7 @@
 package com.llyinatech.houserental.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.llyinatech.houserental.entity.DailyStats;
+import com.llyinatech.houserental.model.entity.DailyStats;
 import com.llyinatech.houserental.mapper.DailyStatsMapper;
 import com.llyinatech.houserental.service.DailyStatsService;
 import org.springframework.stereotype.Service;

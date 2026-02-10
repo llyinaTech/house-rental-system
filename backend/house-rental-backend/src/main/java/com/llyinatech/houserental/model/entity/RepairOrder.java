@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.entity;
+package com.llyinatech.houserental.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("repair_order")
-public class RepairOrder implements Serializable {
+public class RepairOrder extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -59,16 +59,6 @@ public class RepairOrder implements Serializable {
      * 流转日志: [{"time": "...", "action": "房东接单"}]
      */
     private String processLog;
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
 
     /**
      * 房源名称

@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.vo;
+package com.llyinatech.houserental.model.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

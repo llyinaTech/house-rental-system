@@ -1,15 +1,17 @@
-package com.llyinatech.houserental.entity;
+package com.llyinatech.houserental.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import java.io.Serializable;
+
+import java.time.LocalDateTime;
 
 /**
  * 角色实体类
  */
 @Data
 @TableName("sys_role")
-public class Role implements Serializable {
+public class Role extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

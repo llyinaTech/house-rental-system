@@ -2,10 +2,10 @@ package com.llyinatech.houserental.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.llyinatech.houserental.entity.Permission;
+import com.llyinatech.houserental.model.entity.Permission;
 import com.llyinatech.houserental.mapper.PermissionMapper;
 import com.llyinatech.houserental.service.PermissionService;
-import com.llyinatech.houserental.entity.RolePermission;
+import com.llyinatech.houserental.model.entity.RolePermission;
 import com.llyinatech.houserental.exception.BusinessException;
 import com.llyinatech.houserental.mapper.RolePermissionMapper;
 import org.springframework.beans.factory.annotation.Autowired;

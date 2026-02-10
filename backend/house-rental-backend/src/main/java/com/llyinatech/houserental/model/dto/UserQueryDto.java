@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.dto;
+package com.llyinatech.houserental.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

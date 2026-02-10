@@ -195,6 +195,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, View } from '@element-plus/icons-vue'
 import api from '@/api/request'
+import { getDicts } from '@/api/dict'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -210,7 +211,7 @@ const uploadHeaders = computed(() => ({
 
 const uploadAction = computed(() => (import.meta.env.VITE_API_BASE_URL || '') + '/api/oss/upload')
 
-const featureOptions = ['WiFi', '空调', '热水器', '洗衣机', '冰箱', '电视', '暖气', '宽带', '沙发', '床', '衣柜', '天然气', '电梯', '车位']
+const featureOptions = ref([])
 
 const queryParams = reactive({
   pageNum: 1,
@@ -537,6 +538,13 @@ const resetForm = () => {
 onMounted(() => {
   getList()
   getRegionTree()
+  getDicts('house_feature').then(res => {
+    if (res.data && res.data.length > 0) {
+      featureOptions.value = res.data.map(item => item.dictLabel)
+    } else {
+      featureOptions.value = ['WiFi', '空调', '热水器', '洗衣机', '冰箱', '电视', '暖气', '宽带', '沙发', '床', '衣柜', '天然气', '电梯', '车位']
+    }
+  })
 })
 </script>
 

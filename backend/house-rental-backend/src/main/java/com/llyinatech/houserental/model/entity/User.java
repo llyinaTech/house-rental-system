@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.entity;
+package com.llyinatech.houserental.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("sys_user")
-public class User implements Serializable {
+public class User extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -54,21 +54,5 @@ public class User implements Serializable {
      * 状态: 1-正常, 0-禁用
      */
     private Integer status;
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
-
-    /**
-     * 逻辑删除: 0-未删, 1-已删
-     */
-    @TableLogic
-    private Integer deleted;
 }
 

@@ -1,7 +1,7 @@
 package com.llyinatech.houserental.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.llyinatech.houserental.entity.UserRole;
+import com.llyinatech.houserental.model.entity.UserRole;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

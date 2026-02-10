@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
-import com.llyinatech.houserental.entity.Role;
+import com.llyinatech.houserental.model.entity.Role;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.RoleService;

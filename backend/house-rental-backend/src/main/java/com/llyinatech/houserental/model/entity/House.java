@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.entity;
+package com.llyinatech.houserental.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("house_info")
-public class House implements Serializable {
+public class House extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -111,9 +111,4 @@ public class House implements Serializable {
      * 浏览量
      */
     private Integer viewCount;
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
 }

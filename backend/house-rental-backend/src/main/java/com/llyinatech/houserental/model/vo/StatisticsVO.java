@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.vo;
+package com.llyinatech.houserental.model.vo;
 
 import lombok.Data;
 import java.math.BigDecimal;

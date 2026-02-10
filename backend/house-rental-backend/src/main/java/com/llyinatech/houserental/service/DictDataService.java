@@ -1,7 +1,7 @@
 package com.llyinatech.houserental.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.llyinatech.houserental.entity.DictData;
+import com.llyinatech.houserental.model.entity.DictData;
 import java.util.List;
 
 /**

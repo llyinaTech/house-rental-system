@@ -1,7 +1,7 @@
 package com.llyinatech.houserental.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.llyinatech.houserental.entity.DictType;
+import com.llyinatech.houserental.model.entity.DictType;
 
 /**
  * 字典类型Service接口

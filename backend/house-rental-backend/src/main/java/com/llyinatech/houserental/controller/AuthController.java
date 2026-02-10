@@ -2,12 +2,12 @@ package com.llyinatech.houserental.controller;
 
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
-import com.llyinatech.houserental.dto.LoginRequest;
+import com.llyinatech.houserental.model.dto.LoginRequest;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.security.UserDetailsImpl;
 import com.llyinatech.houserental.util.JwtUtil;
-import com.llyinatech.houserental.vo.LoginResponse;
+import com.llyinatech.houserental.model.vo.LoginResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,12 +20,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 认证控制器

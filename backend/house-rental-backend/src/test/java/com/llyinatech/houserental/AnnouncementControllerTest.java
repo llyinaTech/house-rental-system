@@ -1,7 +1,7 @@
 package com.llyinatech.houserental;
 
 import com.llyinatech.houserental.controller.AnnouncementController;
-import com.llyinatech.houserental.entity.Announcement;
+import com.llyinatech.houserental.model.entity.Announcement;
 import com.llyinatech.houserental.service.AnnouncementService;
 import com.llyinatech.houserental.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -11,11 +11,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 

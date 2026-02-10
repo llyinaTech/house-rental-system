@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.entity;
+package com.llyinatech.houserental.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -9,9 +9,11 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
+import java.time.LocalDateTime;
+
 @Data
 @TableName("sys_permission")
-public class Permission implements Serializable {
+public class Permission extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

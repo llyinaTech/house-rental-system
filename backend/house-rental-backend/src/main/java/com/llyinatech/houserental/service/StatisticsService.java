@@ -1,6 +1,6 @@
 package com.llyinatech.houserental.service;
 
-import com.llyinatech.houserental.vo.StatisticsVO;
+import com.llyinatech.houserental.model.vo.StatisticsVO;
 
 public interface StatisticsService {
     /**

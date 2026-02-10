@@ -1,10 +1,17 @@
 package com.llyinatech.houserental.exception;
 
+import lombok.Getter;
+import lombok.Setter;
+import java.io.Serial;
+
 /**
  * 业务异常类
  */
+@Setter
+@Getter
 public class BusinessException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -22,11 +29,4 @@ public class BusinessException extends RuntimeException {
         this.code = code;
     }
 
-    public Integer getCode() {
-        return code;
-    }
-
-    public void setCode(Integer code) {
-        this.code = code;
-    }
 }

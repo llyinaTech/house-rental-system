@@ -2,8 +2,8 @@ package com.llyinatech.houserental.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.llyinatech.houserental.dto.SysLogQueryDTO;
-import com.llyinatech.houserental.entity.SysLog;
+import com.llyinatech.houserental.model.dto.SysLogQueryDTO;
+import com.llyinatech.houserental.model.entity.SysLog;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;

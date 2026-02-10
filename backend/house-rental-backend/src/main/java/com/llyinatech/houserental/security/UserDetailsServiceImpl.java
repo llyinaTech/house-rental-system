@@ -1,7 +1,7 @@
 package com.llyinatech.houserental.security;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.llyinatech.houserental.entity.User;
+import com.llyinatech.houserental.model.entity.User;
 import com.llyinatech.houserental.mapper.PermissionMapper;
 import com.llyinatech.houserental.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.dto;
+package com.llyinatech.houserental.model.dto;
 
 import lombok.Data;
 

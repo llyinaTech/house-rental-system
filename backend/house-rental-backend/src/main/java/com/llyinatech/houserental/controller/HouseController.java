@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
-import com.llyinatech.houserental.entity.House;
+import com.llyinatech.houserental.model.entity.House;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.HouseService;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.json.JSONArray;
 import java.util.ArrayList;
 
-import com.llyinatech.houserental.entity.Region;
+import com.llyinatech.houserental.model.entity.Region;
 
 import java.util.List;
 

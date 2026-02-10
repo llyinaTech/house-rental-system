@@ -1,7 +1,7 @@
 package com.llyinatech.houserental.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.llyinatech.houserental.entity.Role;
+import com.llyinatech.houserental.model.entity.Role;
 
 import java.util.List;
 

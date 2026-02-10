@@ -2,7 +2,7 @@ package com.llyinatech.houserental.controller;
 
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
-import com.llyinatech.houserental.entity.Permission;
+import com.llyinatech.houserental.model.entity.Permission;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.PermissionService;

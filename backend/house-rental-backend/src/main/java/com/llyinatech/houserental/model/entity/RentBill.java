@@ -1,4 +1,4 @@
-package com.llyinatech.houserental.entity;
+package com.llyinatech.houserental.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("rent_bill")
-public class RentBill implements Serializable {
+public class RentBill extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -71,11 +71,6 @@ public class RentBill implements Serializable {
      * 上次提醒时间
      */
     private LocalDateTime lastRemindTime;
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
 
     /**
      * 合同编号

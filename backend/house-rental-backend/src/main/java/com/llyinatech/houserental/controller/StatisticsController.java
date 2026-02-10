@@ -2,7 +2,7 @@ package com.llyinatech.houserental.controller;
 
 import com.llyinatech.houserental.common.Result;
 import com.llyinatech.houserental.service.StatisticsService;
-import com.llyinatech.houserental.vo.StatisticsVO;
+import com.llyinatech.houserental.model.vo.StatisticsVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

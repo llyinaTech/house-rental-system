@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
-import com.llyinatech.houserental.entity.LeaseContract;
+import com.llyinatech.houserental.model.entity.LeaseContract;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.LeaseContractService;
@@ -16,7 +16,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Objects;
 
 /**
  * 租赁合同Controller

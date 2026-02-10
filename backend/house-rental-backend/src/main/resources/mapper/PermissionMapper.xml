@@ -13,7 +13,7 @@
           AND p.status = 1
     </select>
 
-    <select id="selectPermissionsByUserId" resultType="com.llyinatech.houserental.entity.Permission">
+    <select id="selectPermissionsByUserId" resultType="com.llyinatech.houserental.model.entity.Permission">
         SELECT DISTINCT p.*
         FROM sys_permission p
                  INNER JOIN sys_role_permission rp ON p.id = rp.perm_id

@@ -1,16 +1,15 @@
 package com.llyinatech.houserental.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.llyinatech.houserental.entity.DailyStats;
-import com.llyinatech.houserental.entity.House;
-import com.llyinatech.houserental.entity.RentBill;
-import com.llyinatech.houserental.entity.User;
+import com.llyinatech.houserental.model.entity.House;
+import com.llyinatech.houserental.model.entity.RentBill;
+import com.llyinatech.houserental.model.entity.User;
 import com.llyinatech.houserental.mapper.DailyStatsMapper;
 import com.llyinatech.houserental.mapper.HouseMapper;
 import com.llyinatech.houserental.mapper.RentBillMapper;
 import com.llyinatech.houserental.mapper.UserMapper;
 import com.llyinatech.houserental.service.StatisticsService;
-import com.llyinatech.houserental.vo.StatisticsVO;
+import com.llyinatech.houserental.model.vo.StatisticsVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +17,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.llyinatech.houserental.security.UserDetailsImpl;
 import org.springframework.security.core.Authentication;

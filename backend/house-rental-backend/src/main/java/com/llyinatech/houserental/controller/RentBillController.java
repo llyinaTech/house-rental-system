@@ -4,14 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
-import com.llyinatech.houserental.entity.RentBill;
+import com.llyinatech.houserental.model.entity.RentBill;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.RentBillService;
 import com.llyinatech.houserental.service.UserService;
 import com.llyinatech.houserental.service.LeaseContractService;
-import com.llyinatech.houserental.entity.User;
-import com.llyinatech.houserental.entity.LeaseContract;
+import com.llyinatech.houserental.model.entity.User;
+import com.llyinatech.houserental.model.entity.LeaseContract;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -69,6 +69,20 @@ public class RentBillController {
         }
 
         queryWrapper.eq(Objects.nonNull(rentBill.getTenantId()), RentBill::getTenantId, rentBill.getTenantId());
+        
+        if (StringUtils.hasText(rentBill.getTenantName())) {
+            List<User> users = userService.list(new LambdaQueryWrapper<User>()
+                    .like(User::getRealName, rentBill.getTenantName())
+                    .or()
+                    .like(User::getUsername, rentBill.getTenantName()));
+            if (users != null && !users.isEmpty()) {
+                List<Long> tenantIds = users.stream().map(User::getId).collect(Collectors.toList());
+                queryWrapper.in(RentBill::getTenantId, tenantIds);
+            } else {
+                queryWrapper.eq(RentBill::getTenantId, -1L);
+            }
+        }
+
         queryWrapper.eq(Objects.nonNull(rentBill.getContractId()), RentBill::getContractId, rentBill.getContractId());
         queryWrapper.eq(Objects.nonNull(rentBill.getPayStatus()), RentBill::getPayStatus, rentBill.getPayStatus());
 

@@ -4,19 +4,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.llyinatech.houserental.annotation.SysLogAnnotation;
 import com.llyinatech.houserental.common.Result;
-import com.llyinatech.houserental.dto.UserQueryDto;
-import com.llyinatech.houserental.entity.Permission;
-import com.llyinatech.houserental.entity.User;
+import com.llyinatech.houserental.model.dto.UserQueryDto;
+import com.llyinatech.houserental.model.entity.Permission;
+import com.llyinatech.houserental.model.entity.User;
 import com.llyinatech.houserental.enums.ActionEnum;
 import com.llyinatech.houserental.enums.ModuleEnum;
 import com.llyinatech.houserental.service.PermissionService;
 import com.llyinatech.houserental.service.UserService;
 import com.llyinatech.houserental.util.SecurityUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户Controller
@@ -30,6 +32,9 @@ public class UserController {
     
     @Autowired
     private PermissionService permissionService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * 获取当前用户菜单
@@ -113,6 +118,29 @@ public class UserController {
     public Result<String> deleteBatch(@RequestBody List<Long> ids) {
         userService.removeByIds(ids);
         return Result.success("批量删除成功");
+    }
+
+    /**
+     * 重置密码
+     */
+    @SysLogAnnotation(module = ModuleEnum.USER_MANAGEMENT, action = ActionEnum.MODIFY, detail = "重置用户密码")
+    @PutMapping("/{id}/password/reset")
+    @PreAuthorize("hasAuthority('system:user:edit')")
+    public Result<String> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String newPassword = body.get("password");
+        if (newPassword == null || newPassword.isEmpty()) {
+            return Result.error("新密码不能为空");
+        }
+        
+        User user = userService.getById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userService.updateById(user);
+        
+        return Result.success("重置密码成功");
     }
 
     /**

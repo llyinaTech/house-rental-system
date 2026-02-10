@@ -1,6 +1,6 @@
 package com.llyinatech.houserental.security;
 
-import com.llyinatech.houserental.entity.User;
+import com.llyinatech.houserental.model.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

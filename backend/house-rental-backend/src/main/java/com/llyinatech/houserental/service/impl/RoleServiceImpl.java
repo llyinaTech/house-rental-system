@@ -2,8 +2,8 @@ package com.llyinatech.houserental.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.llyinatech.houserental.entity.Role;
-import com.llyinatech.houserental.entity.RolePermission;
+import com.llyinatech.houserental.model.entity.Role;
+import com.llyinatech.houserental.model.entity.RolePermission;
 import com.llyinatech.houserental.mapper.RoleMapper;
 import com.llyinatech.houserental.mapper.RolePermissionMapper;
 import com.llyinatech.houserental.service.RoleService;
